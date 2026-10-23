@@ -114,6 +114,29 @@ export function getJsonAuthorized<T>(
   );
 }
 
+export function postJsonAuthorized<T>(
+  path: string,
+  body: unknown,
+  schema: z.ZodType<T>,
+  token: string,
+  baseUrl: string = defaultBaseUrl(),
+): Promise<T> {
+  return send(
+    path,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    },
+    schema,
+    baseUrl,
+  );
+}
+
 export async function deleteAuthorized(
   path: string,
   token: string,

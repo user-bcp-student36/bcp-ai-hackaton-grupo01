@@ -26,6 +26,12 @@ export function parsePenAmountToCents(input: string): AmountParseResult {
   return { ok: true, cents };
 }
 
+export function formatCentsAsDecimal(cents: number): string {
+  const whole = Math.floor(cents / CENTS_PER_SOL);
+  const fraction = String(cents % CENTS_PER_SOL).padStart(DECIMAL_PLACES, "0");
+  return `${String(whole)}.${fraction}`;
+}
+
 export function formatPenCents(cents: number): string {
   const whole = Math.floor(cents / CENTS_PER_SOL).toLocaleString("en-US");
   const fraction = String(cents % CENTS_PER_SOL).padStart(DECIMAL_PLACES, "0");

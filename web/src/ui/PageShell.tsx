@@ -9,6 +9,8 @@ const NAV_LINKS = [
   { to: "/billetera", label: "Saldo" },
   { to: "/contactos", label: "Contactos" },
   { to: "/pagos", label: "Pagos" },
+  { to: "/pagar-qr", label: "Pagar QR" },
+  { to: "/cobrar", label: "Cobrar QR" },
   { to: "/movimientos", label: "Historial" },
 ] as const;
 

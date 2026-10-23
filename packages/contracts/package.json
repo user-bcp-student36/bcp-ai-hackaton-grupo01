@@ -19,6 +19,10 @@
       "types": "./src/biometric.ts",
       "import": "./dist/biometric.js"
     },
+    "./qr": {
+      "types": "./src/qr.ts",
+      "import": "./dist/qr.js"
+    },
     ".": {
       "types": "./src/common.ts",
       "import": "./dist/common.js"

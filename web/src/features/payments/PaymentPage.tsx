@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { PageShell } from "../../ui/PageShell";
 import { StatusMessage } from "../../ui/StatusMessage";
-import { parsePenAmountToCents } from "./amount";
+import { formatCentsAsDecimal, parsePenAmountToCents } from "./amount";
 import {
   clearPaymentAttempt,
   loadPaymentAttempt,
@@ -41,23 +41,34 @@ type Props = {
   contacts: readonly SavedContact[];
 };
 
-// Preselect the recipient from a "Pagar" link, or when there is only one choice.
+// Preselect the recipient from a "Pagar" link or QR, or when there is only one choice.
 function initialDraft(
   contacts: readonly SavedContact[],
   requestedWalletId: string | null,
+  requestedAmountCents: string | null,
 ): PaymentDraft {
   const requested = contacts.find((c) => c.walletId === requestedWalletId);
   const preselected = requested ?? (contacts.length === 1 ? contacts[0] : undefined);
-  return { ...EMPTY_DRAFT, recipientWalletId: preselected?.walletId ?? "" };
+  const cents = Number(requestedAmountCents);
+  const amountText =
+    requested && Number.isSafeInteger(cents) && cents > 0
+      ? formatCentsAsDecimal(cents)
+      : "";
+  return {
+    ...EMPTY_DRAFT,
+    recipientWalletId: preselected?.walletId ?? "",
+    amountText,
+  };
 }
 
 export function PaymentPage({ ownerUserId, accessToken, contacts }: Props) {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const requestedWalletId = searchParams.get("to");
+  const requestedAmount = searchParams.get("amount");
   const [attempt, setAttempt] = useState(() => loadPaymentAttempt(ownerUserId));
   const [draft, setDraft] = useState<PaymentDraft>(() =>
-    initialDraft(contacts, requestedWalletId),
+    initialDraft(contacts, requestedWalletId, requestedAmount),
   );
   const [draftErrors, setDraftErrors] = useState<PaymentDraftErrors>({});
   const [review, setReview] = useState<PaymentReviewData>();
@@ -143,7 +154,7 @@ export function PaymentPage({ ownerUserId, accessToken, contacts }: Props) {
 
   function startNewPayment() {
     setSuccess(undefined);
-    setDraft(initialDraft(contacts, requestedWalletId));
+    setDraft(initialDraft(contacts, requestedWalletId, requestedAmount));
     setDraftErrors({});
   }
 

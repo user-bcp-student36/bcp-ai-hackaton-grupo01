@@ -362,7 +362,7 @@ test("Storage failure returns 503 and never a success body", async () => {
   expect(response.body).not.toContain('"payment"');
 });
 
-test("Without a configured payment adapter every payment call fails closed with 503", async () => {
+test("Without an injected payment port the SQLite adapter handles the call", async () => {
   const app = await start();
   const sender = await sessionFor(app, "11111111");
   const response = await app.inject({
@@ -371,6 +371,6 @@ test("Without a configured payment adapter every payment call fails closed with 
     headers: { ...sender.auth, "idempotency-key": KEY },
     payload: validBody,
   });
-  expect(response.statusCode).toBe(503);
-  expect(response.body).not.toContain('"payment"');
+  expect(response.statusCode).toBe(404);
+  expect(errorResponseSchema.parse(response.json()).error.code).toBe("RECIPIENT_NOT_FOUND");
 });

@@ -57,9 +57,11 @@ function LocationProbe() {
   return <p>{location.pathname + location.search}</p>;
 }
 
-function renderPage(client: ContactsClient, { signedIn = true } = {}) {
+function renderPage(
+  client: ContactsClient,
+  { signedIn = true, queryClient = new QueryClient() } = {},
+) {
   vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
-  const queryClient = new QueryClient();
   const view = render(
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
@@ -114,6 +116,22 @@ test("a found recipient is saved and opens the payment form", async () => {
 
   expect(await screen.findByText("/pagos?to=w1")).toBeVisible();
   expect(addContact).toHaveBeenCalledWith("w1");
+});
+
+test("saving a recipient discards the payment screen's cached contact list", async () => {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["contacts", "ana"], []);
+  const client = fakeClient({
+    lookupRecipient: vi.fn(() =>
+      Promise.resolve({ phone: "+51999999999", walletId: "w1" }),
+    ),
+  });
+  await renderPage(client, { queryClient });
+
+  await searchPhone("999999999");
+
+  expect(await screen.findByText("/pagos?to=w1")).toBeVisible();
+  expect(queryClient.getQueryData(["contacts", "ana"])).toBeUndefined();
 });
 
 test("a failed save keeps the user on contacts with feedback", async () => {

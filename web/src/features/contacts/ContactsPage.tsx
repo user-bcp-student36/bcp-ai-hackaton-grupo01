@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../lib/apiClient";
 import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
@@ -60,7 +61,9 @@ function ContactsView({ client }: { client: ContactsClient }) {
   const [selected, setSelected] = useState<ContactView | undefined>();
   const latestSearch = useRef(0);
   const navigate = useNavigate();
-
+  const queryClient = useQueryClient();
+  const { session } = useSession();
+  const userId = session?.user.id;
   useEffect(() => {
     let isCurrent = true;
     void client.listContacts().then(
@@ -92,6 +95,8 @@ function ContactsView({ client }: { client: ContactsClient }) {
       const found = await client.lookupRecipient(phone.trim());
       // A found recipient goes straight to payment; saving makes it payable.
       await client.addContact(found.walletId);
+      // Drop the payment screen's cached list so it can't preselect from a stale one.
+      queryClient.removeQueries({ queryKey: ["contacts", userId] });
       if (search === latestSearch.current) {
         void navigate(`/pagos?to=${encodeURIComponent(found.walletId)}`);
       }

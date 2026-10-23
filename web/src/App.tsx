@@ -7,6 +7,8 @@ import { RegistrationPage } from "./features/onboarding/RegistrationPage";
 import { BiometricPage } from "./features/biometric/BiometricPage";
 import { ContactsPage } from "./features/contacts/ContactsPage";
 import { PaymentRoute } from "./features/payments/PaymentRoute";
+import { ReceiveQrPage } from "./features/qr/ReceiveQrPage";
+import { ScanQrPage } from "./features/qr/ScanQrPage";
 import { PaymentHistoryPage } from "./features/receipt-history/PaymentHistoryPage";
 import { PaymentReceiptPage } from "./features/receipt-history/PaymentReceiptPage";
 import { useReceiptSession } from "./features/receipt-history/useReceiptSession";
@@ -32,6 +34,8 @@ export function App() {
         <Route path="/billetera" element={<WalletPage />} />
         <Route path="/contactos" element={<ContactsPage />} />
         <Route path="/pagos" element={<PaymentRoute />} />
+        <Route path="/cobrar" element={<ReceiveQrPage />} />
+        <Route path="/pagar-qr" element={<ScanQrPage />} />
         <Route path="/movimientos" element={<HistoryRoute />} />
         <Route path="/movimientos/:paymentId" element={<ReceiptRoute />} />
       </Routes>
