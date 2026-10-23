@@ -21,6 +21,8 @@
     "build": "tsc -b packages/contracts api && npm run build --workspace @wallet/web",
     "db:migrate": "npm run db:migrate --workspace @wallet/api",
     "seed:demo": "npm run seed:demo --workspace @wallet/api",
+    "db:reset": "node scripts/reset-db.mjs",
+    "services": "node scripts/services.mjs",
     "format": "prettier --write api packages/contracts web *.json *.mjs"
   },
   "devDependencies": {

@@ -50,6 +50,8 @@ Stay inside your lane's folders. Edit another lane's files only when the issue s
 | Test    | `npm test` |
 | Build   | `npm run build` |
 | Seed    | `npm run db:migrate` then `npm run seed:demo` |
+| Reset DB | `node scripts/services.mjs stop`, then `npm run db:reset` (purges, migrates, seeds) |
+| Start/stop both | `node scripts/services.mjs start\|stop\|restart\|status [--build]` (API :3000, web :5173; logs in `.orchestrate/`) |
 
 `node scripts/orchestrate.mjs check` runs Spec validate, then Install, Lint, Test and Build, from this table: it is the CI. `scaffold` fills in the TODO rows with commands that work in any Windows shell (for example `npm run lint`).
 
