@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { Link } from "react-router";
 import { ApiError } from "../../lib/apiClient";
+import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
 import { StatusMessage, type StatusTone } from "../../ui/StatusMessage";
 import { TextField } from "../../ui/TextField";
@@ -32,7 +34,25 @@ function withContact(contacts: ContactView[], contact: ContactView): ContactView
     : [...contacts, contact];
 }
 
-export function ContactsPage({ client = contactsClient }: { client?: ContactsClient }) {
+type Props = { client?: ContactsClient };
+
+export function ContactsPage({ client = contactsClient }: Props) {
+  const { session } = useSession();
+
+  if (!session) {
+    return (
+      <PageShell title="Contactos">
+        <StatusMessage tone="info">Inicia sesión para ver tus contactos.</StatusMessage>
+        <Link to="/ingresar">Ingresar</Link>
+      </PageShell>
+    );
+  }
+
+  // Keyed by user so logout or an account switch discards every query and form state.
+  return <ContactsView key={session.user.id} client={client} />;
+}
+
+function ContactsView({ client }: Required<Props>) {
   const [phone, setPhone] = useState("");
   const [lookup, setLookup] = useState<RecipientLookup | undefined>();
   const [searchError, setSearchError] = useState<string | undefined>();

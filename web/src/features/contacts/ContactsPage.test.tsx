@@ -1,24 +1,74 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { UserView } from "@wallet/contracts/onboarding";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { MemoryRouter } from "react-router";
 import { ApiError } from "../../lib/apiClient";
 import type { ContactsClient, ContactView } from "./contactsClient";
+import { SessionProvider, useSession, type ActiveSession } from "../../lib/session";
 import { ContactsPage } from "./ContactsPage";
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
-function renderPage(client: ContactsClient) {
-  return render(
-    <MemoryRouter>
-      <ContactsPage client={client} />
-    </MemoryRouter>,
+const TIMESTAMP = "2026-10-23T10:00:00.000Z";
+
+function sessionFor(id: string): ActiveSession {
+  const user: UserView = {
+    id,
+    documentType: "DNI",
+    documentNumber: "12345678",
+    phone: "+51912345678",
+    email: `${id}@example.com`,
+    walletId: `wallet-${id}`,
+    kycStatus: "activa",
+    active: true,
+    createdAt: TIMESTAMP,
+    updatedAt: TIMESTAMP,
+  };
+  return { token: `token-${id}`, expiresAt: "2026-10-23T12:00:00.000Z", user };
+}
+
+function SessionControls() {
+  const { signIn, logout } = useSession();
+  return (
+    <>
+      <button type="button" onClick={() => { signIn(sessionFor("ana")); }}>
+        Entrar como Ana
+      </button>
+      <button type="button" onClick={() => { signIn(sessionFor("beto")); }}>
+        Entrar como Beto
+      </button>
+      <button type="button" onClick={() => void logout()}>
+        Salir
+      </button>
+    </>
   );
+}
+
+function renderPage(client: ContactsClient, { signedIn = true } = {}) {
+  vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
+  const queryClient = new QueryClient();
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider>
+        <MemoryRouter>
+          <SessionControls />
+          <ContactsPage client={client} />
+        </MemoryRouter>
+      </SessionProvider>
+    </QueryClientProvider>,
+  );
+  if (signedIn) {
+    return userEvent.click(screen.getByRole("button", { name: "Entrar como Ana" })).then(() => view);
+  }
+  return Promise.resolve(view);
 }
 
 const SAVED: ContactView = {
@@ -52,7 +102,7 @@ test("lookup finds a recipient and saves it as a contact", async () => {
     ),
     addContact,
   });
-  renderPage(client);
+  await renderPage(client);
 
   await searchPhone("999999999");
   expect(await screen.findByText("Destinatario encontrado: +51999999999")).toBeVisible();
@@ -63,7 +113,7 @@ test("lookup finds a recipient and saves it as a contact", async () => {
 });
 
 test("a missing recipient shows feedback and selects nobody", async () => {
-  renderPage(fakeClient());
+  await renderPage(fakeClient());
 
   await searchPhone("999999999");
 
@@ -78,7 +128,7 @@ test("an unexpected lookup failure shows the generic message", async () => {
   const client = fakeClient({
     lookupRecipient: vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))),
   });
-  renderPage(client);
+  await renderPage(client);
 
   await searchPhone("999999999");
 
@@ -88,7 +138,7 @@ test("an unexpected lookup failure shows the generic message", async () => {
 });
 
 test("an empty contact list shows the empty state", async () => {
-  renderPage(fakeClient());
+  await renderPage(fakeClient());
 
   expect(await screen.findByText("Aún no tienes contactos guardados.")).toBeVisible();
 });
@@ -98,7 +148,7 @@ test("a failed contact list can be retried", async () => {
     .fn<ContactsClient["listContacts"]>()
     .mockRejectedValueOnce(new TypeError("Failed to fetch"))
     .mockResolvedValueOnce([SAVED]);
-  renderPage(fakeClient({ listContacts }));
+  await renderPage(fakeClient({ listContacts }));
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "No se pudieron cargar tus contactos.",
@@ -109,7 +159,7 @@ test("a failed contact list can be retried", async () => {
 });
 
 test("selecting a saved contact makes it the recipient", async () => {
-  renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
+  await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
 
   await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
 
@@ -121,7 +171,7 @@ test("saving an existing contact keeps a single list entry", async () => {
     listContacts: () => Promise.resolve([SAVED]),
     lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
   });
-  renderPage(client);
+  await renderPage(client);
   await screen.findByRole("list", { name: "Mis contactos" });
 
   await searchPhone("999999999");
@@ -131,4 +181,63 @@ test("saving an existing contact keeps a single list entry", async () => {
     expect(screen.getByText("Contacto guardado.")).toBeVisible();
   });
   expect(screen.getAllByRole("listitem")).toHaveLength(1);
+});
+
+test("contacts require login and send no request while signed out", async () => {
+  const listContacts = vi.fn(() => Promise.resolve([]));
+  await renderPage(fakeClient({ listContacts }), { signedIn: false });
+
+  expect(screen.getByText("Inicia sesión para ver tus contactos.")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Ingresar" })).toHaveAttribute("href", "/ingresar");
+  expect(listContacts).not.toHaveBeenCalled();
+});
+
+test("logout clears the contact query state", async () => {
+  await renderPage(
+    fakeClient({
+      listContacts: () => Promise.resolve([SAVED]),
+      lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
+    }),
+  );
+  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
+  await searchPhone("999999999");
+  await screen.findByText(`Destinatario encontrado: ${SAVED.phone}`);
+
+  await userEvent.click(screen.getByRole("button", { name: "Salir" }));
+
+  expect(await screen.findByText("Inicia sesión para ver tus contactos.")).toBeVisible();
+  expect(screen.queryByText(SAVED.phone)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
+});
+
+test("switching accounts discards the previous account contacts and selection", async () => {
+  const listContacts = vi
+    .fn<ContactsClient["listContacts"]>()
+    .mockResolvedValueOnce([SAVED])
+    .mockResolvedValueOnce([]);
+  await renderPage(fakeClient({ listContacts }));
+  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
+
+  await userEvent.click(screen.getByRole("button", { name: "Entrar como Beto" }));
+
+  expect(await screen.findByText("Aún no tienes contactos guardados.")).toBeVisible();
+  expect(screen.queryByText(SAVED.phone)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
+  expect(listContacts).toHaveBeenCalledTimes(2);
+});
+
+test("a duplicated add after an account switch lists the contact once", async () => {
+  const client = fakeClient({
+    listContacts: () => Promise.resolve([]),
+    lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
+  });
+  await renderPage(client);
+  await userEvent.click(screen.getByRole("button", { name: "Entrar como Beto" }));
+  await screen.findByText("Aún no tienes contactos guardados.");
+
+  await searchPhone("999999999");
+  await userEvent.click(await screen.findByRole("button", { name: "Guardar contacto" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Guardar contacto" }));
+
+  expect(await screen.findAllByRole("listitem")).toHaveLength(1);
 });
