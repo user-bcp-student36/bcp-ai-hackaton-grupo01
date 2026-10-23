@@ -19,10 +19,8 @@ import {
 import type { PaymentView, SavedContact } from "./payment-types";
 import {
   PaymentForm,
-  PaymentReview,
   type PaymentDraft,
   type PaymentDraftErrors,
-  type PaymentReviewData,
 } from "./PaymentForm";
 import { PaymentPendingPanel, PaymentSuccessPanel } from "./PaymentStatus";
 
@@ -84,7 +82,6 @@ export function PaymentPage({
     initialDraft(contacts, requestedWalletId, requestedAmount),
   );
   const [draftErrors, setDraftErrors] = useState<PaymentDraftErrors>({});
-  const [review, setReview] = useState<PaymentReviewData>();
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState<PaymentView>();
   const [failure, setFailure] = useState<string>();
@@ -137,8 +134,9 @@ export function PaymentPage({
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
-  function handleReview(event: SyntheticEvent<HTMLFormElement>) {
+  function handlePay(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (inFlight.current) return;
     const amount = parsePenAmountToCents(draft.amountText);
     const recipient = findContact(draft.recipientWalletId);
     const errors: PaymentDraftErrors = {};
@@ -146,27 +144,18 @@ export function PaymentPage({
     if (!amount.ok) errors.amountText = amount.message;
     setDraftErrors(errors);
     if (!recipient || !amount.ok) return;
-    setReview({
+    const created: PaymentAttempt = {
+      ownerUserId,
+      key: crypto.randomUUID(),
       payload: {
         recipientType: "contact",
         recipientWalletId: recipient.walletId,
         amountCents: amount.cents,
         currency: "PEN",
       },
-      recipientName: recipient.name,
-    });
-  }
-
-  function confirmReview() {
-    if (!review || inFlight.current) return;
-    const created: PaymentAttempt = {
-      ownerUserId,
-      key: crypto.randomUUID(),
-      payload: review.payload,
     };
     savePaymentAttempt(created);
     setAttempt(created);
-    setReview(undefined);
     void settleAttempt(created, submitPayment);
   }
 
@@ -202,16 +191,6 @@ export function PaymentPage({
         onResolve={resolveAttempt}
       />
     );
-  } else if (review) {
-    content = (
-      <PaymentReview
-        review={review}
-        onConfirm={confirmReview}
-        onBack={() => {
-          setReview(undefined);
-        }}
-      />
-    );
   } else {
     content = (
       <PaymentForm
@@ -219,7 +198,7 @@ export function PaymentPage({
         errors={draftErrors}
         contacts={contacts}
         onChange={changeDraft}
-        onSubmit={handleReview}
+        onSubmit={handlePay}
       />
     );
   }

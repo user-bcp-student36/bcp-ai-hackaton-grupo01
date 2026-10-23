@@ -114,14 +114,10 @@ function renderPage(
   );
 }
 
-async function reviewPayment(user: UserEvent, amount: string) {
+async function payNow(user: UserEvent, amount: string) {
   await user.selectOptions(screen.getByLabelText("Destinatario"), ANA_WALLET);
   await user.type(screen.getByLabelText("Monto en soles (PEN)"), amount);
-  await user.click(screen.getByRole("button", { name: "Revisar pago" }));
-}
-
-function confirmButton() {
-  return screen.getByRole("button", { name: "Confirmar pago" });
+  await user.click(screen.getByRole("button", { name: "Pagar" }));
 }
 
 test("Sends the signed-in user's bearer token with the payment", async () => {
@@ -129,8 +125,7 @@ test("Sends the signed-in user's bearer token with the payment", async () => {
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "10");
-  await user.click(confirmButton());
+  await payNow(user, "10");
 
   await screen.findByRole("heading", { name: "Pago realizado" });
   const [, init] = fetchMock.mock.calls[0] ?? [];
@@ -139,16 +134,12 @@ test("Sends the signed-in user's bearer token with the payment", async () => {
   );
 });
 
-test("Sends the confirmed amount in cents with one idempotency key", async () => {
+test("Sends the amount in cents with one idempotency key", async () => {
   const fetchMock = stubFetch(() => json(paymentJson(), 201));
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "25.50");
-  expect(screen.getByText("Vas a pagar S/ 25.50 a Ana Quispe.")).toBeVisible();
-  expect(fetchMock).not.toHaveBeenCalled();
-
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(
     await screen.findByRole("heading", { name: "Pago realizado" }),
@@ -186,8 +177,7 @@ test("Refreshes the cached wallet balance after a successful payment", async () 
     </QueryClientProvider>,
   );
 
-  await reviewPayment(user, "10");
-  await user.click(confirmButton());
+  await payNow(user, "10");
 
   await screen.findByRole("heading", { name: "Pago realizado" });
   expect(queryClient.getQueryState(accountKey)?.isInvalidated).toBe(true);
@@ -198,7 +188,7 @@ test("Rejects an invalid amount without sending anything", async () => {
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, ".");
+  await payNow(user, ".");
 
   expect(
     screen.getByText(
@@ -208,13 +198,14 @@ test("Rejects an invalid amount without sending anything", async () => {
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
-test("Sends a single request when confirm is double clicked", async () => {
+test("Sends a single request when pay is double clicked", async () => {
   const fetchMock = stubFetch(() => new Promise<Response>(() => undefined));
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "25.50");
-  await user.dblClick(confirmButton());
+  await user.selectOptions(screen.getByLabelText("Destinatario"), ANA_WALLET);
+  await user.type(screen.getByLabelText("Monto en soles (PEN)"), "25.50");
+  await user.dblClick(screen.getByRole("button", { name: "Pagar" }));
 
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
@@ -234,14 +225,13 @@ test("Keeps a lost response as unknown and resolves it with the same key", async
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(
     await screen.findByRole("heading", { name: "Resultado por confirmar" }),
   ).toBeVisible();
   expect(
-    screen.queryByRole("button", { name: "Revisar pago" }),
+    screen.queryByRole("button", { name: "Pagar" }),
   ).not.toBeInTheDocument();
 
   await user.click(screen.getByRole("button", { name: "Consultar resultado" }));
@@ -279,16 +269,14 @@ test("Clears the attempt after a business rejection so the next payment gets a n
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(
     await screen.findByText("Saldo insuficiente para este pago."),
   ).toBeVisible();
   expect(sessionStorage.length).toBe(0);
 
-  await user.click(screen.getByRole("button", { name: "Revisar pago" }));
-  await user.click(confirmButton());
+  await user.click(screen.getByRole("button", { name: "Pagar" }));
 
   expect(
     await screen.findByRole("heading", { name: "Pago realizado" }),
@@ -319,8 +307,7 @@ test("Retries a provider timeout automatically with the same key and succeeds", 
   const user = userEvent.setup();
   renderPage(OWNER, { maxRetries: 2, delayMs: 0 });
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(
     await screen.findByRole("heading", { name: "Pago realizado" }),
@@ -345,8 +332,7 @@ test("Stops after the retry limit and offers a manual check", async () => {
   const user = userEvent.setup();
   renderPage(OWNER, { maxRetries: 1, delayMs: 0 });
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(
     await screen.findByRole("heading", { name: "Resultado por confirmar" }),
@@ -371,12 +357,11 @@ test("Shows a clear message when the provider declines and frees the form", asyn
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
 
   expect(await screen.findByText(/El proveedor rechazó el pago/)).toBeVisible();
   expect(sessionStorage.length).toBe(0);
-  expect(screen.getByRole("button", { name: "Revisar pago" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Pagar" })).toBeVisible();
 });
 
 test("Restores an unresolved attempt for its own user only", async () => {
@@ -384,8 +369,7 @@ test("Restores an unresolved attempt for its own user only", async () => {
   const user = userEvent.setup();
   const original = renderPage(OWNER);
 
-  await reviewPayment(user, "25.50");
-  await user.click(confirmButton());
+  await payNow(user, "25.50");
   expect(
     await screen.findByRole("heading", { name: "Resultado por confirmar" }),
   ).toBeVisible();
@@ -395,7 +379,7 @@ test("Restores an unresolved attempt for its own user only", async () => {
   expect(
     screen.queryByRole("heading", { name: "Resultado por confirmar" }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Revisar pago" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Pagar" })).toBeVisible();
   otherUser.unmount();
 
   renderPage(OWNER);

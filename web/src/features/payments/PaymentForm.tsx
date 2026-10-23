@@ -2,15 +2,10 @@ import type { SyntheticEvent } from "react";
 import { amountFilter } from "../../lib/inputFilters";
 import { SelectField } from "../../ui/SelectField";
 import { TextField } from "../../ui/TextField";
-import { formatPenCents } from "./amount";
-import type { PaymentPayload, SavedContact } from "./payment-types";
+import type { SavedContact } from "./payment-types";
 
 export type PaymentDraft = { recipientWalletId: string; amountText: string };
 export type PaymentDraftErrors = Partial<Record<keyof PaymentDraft, string>>;
-export type PaymentReviewData = {
-  payload: PaymentPayload;
-  recipientName: string;
-};
 
 const QUICK_AMOUNTS = ["10", "20", "50", "100"];
 
@@ -72,36 +67,8 @@ export function PaymentForm({
         ))}
       </div>
       <div className="form-actions">
-        <button type="submit">Revisar pago</button>
+        <button type="submit">Pagar</button>
       </div>
     </form>
-  );
-}
-
-export function PaymentReview({
-  review,
-  onConfirm,
-  onBack,
-}: {
-  review: PaymentReviewData;
-  onConfirm: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <section className="card" aria-labelledby="payment-review-title">
-      <h2 id="payment-review-title">Confirma tu pago</h2>
-      <p>
-        Vas a pagar {formatPenCents(review.payload.amountCents)} a{" "}
-        {review.recipientName}.
-      </p>
-      <div className="form-actions">
-        <button type="button" onClick={onConfirm}>
-          Confirmar pago
-        </button>
-        <button type="button" className="button-secondary" onClick={onBack}>
-          Volver
-        </button>
-      </div>
-    </section>
   );
 }
