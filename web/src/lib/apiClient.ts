@@ -1,7 +1,7 @@
 import { errorResponseSchema } from "@wallet/contracts";
 import { z } from "zod";
 
-const DEFAULT_ERROR_MESSAGE = "No se pudo completar la solicitud.";
+export const DEFAULT_ERROR_MESSAGE = "No se pudo completar la solicitud.";
 
 // Only the error object is read: some failures (e.g. 500 registration) add
 // sibling keys such as walletId, which the strict top-level schema rejects.

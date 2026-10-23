@@ -20,7 +20,7 @@
 
 ## 4. Add contact search, save and selection interface
 <!-- issue: area=frontend size=M priority=p1 files=web/src/features/contacts/,web/src/App.tsx -->
-- [ ] 4.1 Add phone search, explicit add and own-contact list/selection using Contract mocks of the API client; verify loading/error/empty/not-found states.
+- [x] 4.1 Add phone search, explicit add and own-contact list/selection using Contract mocks of the API client; verify loading/error/empty/not-found states.
 - [ ] 4.2 Bind navigation only after login and clear contact query state on logout; never fabricate a recipient after a failed lookup.
 - [ ] 4.3 Test lookup/add/list success and failure via userEvent and mocks, including duplicated add and account switch.
 
