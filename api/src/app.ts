@@ -14,7 +14,7 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import { authRoutes } from "./features/auth/adapters/http/routes.js";
@@ -216,8 +216,8 @@ export async function buildApp(deps: {
         newId: randomUUID,
         openingBalanceCents: deps.config.DEMO_INITIAL_BALANCE_CENTS,
       }),
-      login,
       open,
+      newPassword: () => String(randomInt(0, 1_000_000)).padStart(6, "0"),
     }),
     throttle: new LoginThrottle({
       maxAttempts: deps.config.AUTH_RATE_LIMIT_MAX,

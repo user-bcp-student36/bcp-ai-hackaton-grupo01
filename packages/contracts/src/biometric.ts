@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { passwordSchema } from "./onboarding.js";
 import { sessionResponseSchema } from "./auth.js";
 
 export const FACE_IMAGE_PREFIX = "data:image/jpeg;base64,";
@@ -21,7 +20,6 @@ export const biometricProfileResponseSchema = z.strictObject({
 
 export const biometricSessionInputSchema = z.strictObject({
   documentNumber: dniSchema,
-  password: passwordSchema.optional(),
   faceImage: z
     .string()
     .startsWith(FACE_IMAGE_PREFIX)

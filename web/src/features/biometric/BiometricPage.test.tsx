@@ -53,9 +53,7 @@ test("only the DNI is requested first, then the preloaded data is shown", async 
   expect(await screen.findByText("Andrés Koga")).toBeVisible();
   expect(screen.getByText("+51987000001")).toBeVisible();
   expect(screen.getByText("andres.koga@example.com")).toBeVisible();
-  expect(
-    screen.getByLabelText("Crea tu contraseña de 6 dígitos"),
-  ).toBeVisible();
+  expect(screen.queryByLabelText(/contraseña/i)).not.toBeInTheDocument();
   expect(
     screen.getByText("Este navegador no permite usar la cámara."),
   ).toBeVisible();

@@ -10,7 +10,6 @@ import { loadConfig } from "../../../../shared/config.js";
 import { migrationsDirectory, openDatabase } from "../../../../shared/database.js";
 
 const FACE_IMAGE = `${FACE_IMAGE_PREFIX}${"A".repeat(200)}`;
-const PASSWORD = "246810";
 const PAYMENT_MAX_CENTS = 50_000;
 
 let directory: string;
@@ -44,7 +43,7 @@ async function signIn(documentNumber: string) {
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/biometric/sessions",
-    payload: { documentNumber, password: PASSWORD, faceImage: FACE_IMAGE },
+    payload: { documentNumber, faceImage: FACE_IMAGE },
   });
   const body = response.json<{
     accessToken: string;
