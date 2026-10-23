@@ -2,9 +2,9 @@
 
 ## 1. Implement atomic SQLite payment and persistent retry identity
 <!-- issue: area=backend size=M priority=p1 agent=auto files=api/src/features/payments/application/transfer.ts,api/src/features/payments/adapters/persistence/,api/db/migrations/004-payments.sql -->
-- [ ] 1.1 Implement `004-payments.sql` and one transaction owning key check, conditional debit/credit and payment/key per `../payments/design.md#contracts`; use a fake contact reader, no import from the contacts feature.
-- [ ] 1.2 Implement restart-safe sender-key and participant-ID queries, busy/rollback handling and the receiver balance cap; verify no adapter imports across features.
-- [ ] 1.3 Test with a real temporary SQLite: success, business failures, injected pre-commit failure, concurrent same/distinct keys and repeat after restart without double debit.
+- [x] 1.1 Implement `004-payments.sql` and one transaction owning key check, conditional debit/credit and payment/key per `../payments/design.md#contracts`; use a fake contact reader, no import from the contacts feature.
+- [x] 1.2 Implement restart-safe sender-key and participant-ID queries, busy/rollback handling and the receiver balance cap; verify no adapter imports across features.
+- [x] 1.3 Test with a real temporary SQLite: success, business failures, injected pre-commit failure, concurrent same/distinct keys and repeat after restart without double debit.
 
 ## 2. Expose transfer and recovery routes
 <!-- issue: area=backend size=S priority=p1 agent=auto files=api/src/features/payments/adapters/http/,api/src/app.ts -->
