@@ -82,6 +82,7 @@ function renderPage(
 const SAVED: ContactView = {
   id: "c1",
   phone: "+51999999999",
+  displayName: "María Q***",
   walletId: "w1",
   createdAt: "2026-10-23T10:00:00.000Z",
 };
@@ -191,15 +192,15 @@ test("a failed contact list can be retried", async () => {
   );
   await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
 
-  expect(await screen.findByText(SAVED.phone)).toBeVisible();
+  expect(await screen.findByText(SAVED.displayName)).toBeVisible();
 });
 
 test("selecting a saved contact makes it the recipient", async () => {
   await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
 
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
+  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
 
-  expect(screen.getByText(`Destinatario seleccionado: ${SAVED.phone}`)).toBeVisible();
+  expect(screen.getByText(`Destinatario seleccionado: ${SAVED.displayName}`)).toBeVisible();
 });
 
 test("contacts require login and send no request while signed out", async () => {
@@ -217,12 +218,12 @@ test("logout clears the contact query state", async () => {
       listContacts: () => Promise.resolve([SAVED]),
     }),
   );
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
+  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
 
   await userEvent.click(screen.getByRole("button", { name: "Salir" }));
 
   expect(await screen.findByText("Inicia sesión para ver tus contactos.")).toBeVisible();
-  expect(screen.queryByText(SAVED.phone)).not.toBeInTheDocument();
+  expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
   expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
 });
 
@@ -232,12 +233,12 @@ test("switching accounts discards the previous account contacts and selection", 
     .mockResolvedValueOnce([SAVED])
     .mockResolvedValueOnce([]);
   await renderPage(fakeClient({ listContacts }));
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
+  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
 
   await userEvent.click(screen.getByRole("button", { name: "Entrar como Beto" }));
 
   expect(await screen.findByText("Aún no tienes contactos guardados.")).toBeVisible();
-  expect(screen.queryByText(SAVED.phone)).not.toBeInTheDocument();
+  expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
   expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
   expect(listContacts).toHaveBeenCalledTimes(2);
 });
@@ -245,7 +246,7 @@ test("switching accounts discards the previous account contacts and selection", 
 test("a Pagar link on each saved contact opens its payment form", async () => {
   await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
 
-  expect(await screen.findByRole("link", { name: `Pagar a ${SAVED.phone}` })).toHaveAttribute(
+  expect(await screen.findByRole("link", { name: `Pagar a ${SAVED.displayName}` })).toHaveAttribute(
     "href",
     "/pagos?to=w1",
   );

@@ -320,7 +320,7 @@ test("Contact responses never expose private identity fields", async () => {
   const response = await list(app, token);
 
   const [contact] = listContactsResponseSchema.parse(response.json()).contacts;
-  expect(Object.keys(contact ?? {}).sort()).toEqual(["createdAt", "id", "phone", "walletId"]);
+  expect(Object.keys(contact ?? {}).sort()).toEqual(["createdAt", "displayName", "id", "phone", "walletId"]);
   expect(response.body).not.toContain("@example.test");
 });
 

@@ -8,6 +8,7 @@ const idSchema = z.string().min(1).max(100);
 export const contactViewSchema = z.strictObject({
   id: idSchema,
   phone: z.string(),
+  displayName: z.string(),
   walletId: idSchema,
   createdAt: z.iso.datetime(),
 });

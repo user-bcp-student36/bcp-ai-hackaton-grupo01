@@ -69,6 +69,7 @@ class InMemoryContacts implements ContactRepository {
     return {
       id: row.id,
       phone: recipient.phone,
+      displayName: "Contacto ***",
       walletId: recipient.walletId,
       createdAt: row.createdAt,
     };

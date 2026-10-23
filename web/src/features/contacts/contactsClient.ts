@@ -8,6 +8,7 @@ const API_BASE_URL =
 const contactViewSchema = z.object({
   id: z.string(),
   phone: z.string(),
+  displayName: z.string(),
   walletId: z.string(),
   createdAt: z.string(),
 });

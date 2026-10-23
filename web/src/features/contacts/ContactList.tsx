@@ -37,13 +37,13 @@ export function ContactList({
     <ul className="contact-list" aria-label="Mis contactos">
       {contacts.map((contact) => (
         <li key={contact.id} className="contact-row">
-          <span className="contact-phone">{contact.phone}</span>
+          <span className="contact-phone">{contact.displayName}</span>
           <span className="contact-actions">
             <Link
               className="button-link"
               to={`/pagos?to=${encodeURIComponent(contact.walletId)}`}
             >
-              Pagar a {contact.phone}
+              Pagar a {contact.displayName}
             </Link>
             <button
               type="button"
@@ -53,7 +53,7 @@ export function ContactList({
                 onSelect(contact);
               }}
             >
-              Seleccionar {contact.phone}
+              Seleccionar {contact.displayName}
             </button>
           </span>
         </li>

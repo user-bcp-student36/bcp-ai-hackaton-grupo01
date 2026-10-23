@@ -144,6 +144,7 @@ test("pasting a fixed-amount QR saves the receiver and opens the prefilled payme
           contact: {
             id: "c1",
             phone: "+51987000001",
+            displayName: "Andrés K***",
             walletId: RECEIVER_WALLET,
             createdAt: TIMESTAMP,
           },
@@ -175,6 +176,7 @@ test("pasting an open-amount QR opens the payment without an amount", async () =
           contact: {
             id: "c1",
             phone: "+51987000001",
+            displayName: "Andrés K***",
             walletId: RECEIVER_WALLET,
             createdAt: TIMESTAMP,
           },

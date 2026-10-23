@@ -3,6 +3,7 @@ export type Recipient = { userId: string; phone: string; walletId: string };
 export type Contact = {
   id: string;
   phone: string;
+  displayName: string;
   walletId: string;
   createdAt: string;
 };

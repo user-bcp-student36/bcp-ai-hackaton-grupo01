@@ -21,6 +21,10 @@ const DEMO_PROFILES: readonly DemoProfile[] = [
   },
 ];
 
+export function findDemoProfileByPhone(phone: string): DemoProfile | null {
+  return DEMO_PROFILES.find((profile) => profile.phone === phone) ?? null;
+}
+
 export function findDemoProfile(documentNumber: string): DemoProfile | null {
   return (
     DEMO_PROFILES.find((profile) => profile.documentNumber === documentNumber) ??

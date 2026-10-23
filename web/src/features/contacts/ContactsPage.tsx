@@ -137,7 +137,7 @@ function ContactsView({ client }: { client: ContactsClient }) {
 
       {selected ? (
         <StatusMessage tone="info">
-          Destinatario seleccionado: {selected.phone}
+          Destinatario seleccionado: {selected.displayName}
         </StatusMessage>
       ) : null}
     </PageShell>

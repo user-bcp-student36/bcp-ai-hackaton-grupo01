@@ -35,7 +35,7 @@ function PaymentWithContacts({ session }: { session: ActiveSession }) {
 
   const saved: SavedContact[] = (contacts.data ?? []).map((contact) => ({
     walletId: contact.walletId,
-    name: contact.phone,
+    name: contact.displayName,
   }));
 
   if (contacts.isPending) {
