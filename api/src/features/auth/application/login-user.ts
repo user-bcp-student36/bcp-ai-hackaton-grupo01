@@ -28,9 +28,41 @@ export type LoginResult = {
   user: User;
 };
 
+type SessionDependencies = Pick<
+  Dependencies,
+  "sessions" | "now" | "newId" | "newToken" | "sessionTtlSeconds"
+>;
+
+// Opens a session for an already-authenticated user; the caller proves identity first.
+export function openSession(
+  deps: SessionDependencies,
+): (user: User) => LoginResult {
+  return (user) => {
+    const createdAt = deps.now();
+    const expiresAt = new Date(
+      createdAt.getTime() + deps.sessionTtlSeconds * 1000,
+    );
+    const accessToken = deps.newToken();
+    deps.sessions.create({
+      id: deps.newId(),
+      userId: user.id,
+      tokenHash: hashSessionToken(accessToken),
+      createdAt: createdAt.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+    });
+    return {
+      accessToken,
+      tokenType: "Bearer",
+      expiresAt: expiresAt.toISOString(),
+      user,
+    };
+  };
+}
+
 export function loginUser(
   deps: Dependencies,
 ): (input: LoginInput) => Promise<LoginResult> {
+  const open = openSession(deps);
   return async (input) => {
     const credentials = deps.users.findByDocument({
       documentType: input.documentType,
@@ -45,24 +77,6 @@ export function loginUser(
       credentials.passwordHash,
     );
     if (!matches) throw new InvalidCredentials();
-
-    const createdAt = deps.now();
-    const expiresAt = new Date(
-      createdAt.getTime() + deps.sessionTtlSeconds * 1000,
-    );
-    const accessToken = deps.newToken();
-    deps.sessions.create({
-      id: deps.newId(),
-      userId: credentials.user.id,
-      tokenHash: hashSessionToken(accessToken),
-      createdAt: createdAt.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-    });
-    return {
-      accessToken,
-      tokenType: "Bearer",
-      expiresAt: expiresAt.toISOString(),
-      user: credentials.user,
-    };
+    return open(credentials.user);
   };
 }
