@@ -25,6 +25,15 @@ import { loginUser } from "./features/auth/application/login-user.js";
 import { resolveSession } from "./features/auth/application/resolve-session.js";
 import { Unauthenticated } from "./features/auth/domain/session.js";
 import { revokeSession } from "./features/auth/application/revoke-session.js";
+import { MAX_CONTACTS } from "@wallet/contracts/contacts";
+import { contactRoutes } from "./features/contacts/adapters/http/routes.js";
+import {
+  SqliteContacts,
+  SqliteRecipientDirectory,
+} from "./features/contacts/adapters/persistence/sqlite-contacts.js";
+import { addContact } from "./features/contacts/application/add-contact.js";
+import { listContacts } from "./features/contacts/application/list-contacts.js";
+import { lookupRecipient } from "./features/contacts/application/lookup-recipient.js";
 import { paymentRoutes } from "./features/payments/adapters/http/routes.js";
 import { UnavailablePayments } from "./features/payments/adapters/unavailable/unavailable-payments.js";
 import type { PaymentPort } from "./features/payments/application/ports.js";
@@ -176,6 +185,8 @@ export async function buildApp(deps: {
     documentSecret: randomBytes(32),
   });
   const resolveOwner = resolveSession({ users, sessions, now: clock });
+  const directory = new SqliteRecipientDirectory(database);
+  const contacts = new SqliteContacts(database);
   const payments = new SqlitePaymentQueries(database);
   await app.register(receiptHistoryRoutes, {
     authenticate: (token) => {
@@ -200,6 +211,31 @@ export async function buildApp(deps: {
         throw error;
       }
     },
+  });
+  await app.register(contactRoutes, {
+    authenticate: (token) => {
+      try {
+        const owner = resolve(token);
+        return { userId: owner.id, active: owner.active };
+      } catch (error) {
+        if (error instanceof Unauthenticated) return null;
+        throw error;
+      }
+    },
+    lookup: lookupRecipient({ directory }),
+    add: addContact({
+      directory,
+      contacts,
+      now: () => new Date().toISOString(),
+      newId: randomUUID,
+      maxContacts: MAX_CONTACTS,
+    }),
+    list: listContacts({ contacts }),
+    throttle: new LoginThrottle({
+      maxAttempts: deps.config.AUTH_RATE_LIMIT_MAX,
+      windowSeconds: deps.config.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+      now: () => Date.now(),
+    }),
   });
   return app;
 }

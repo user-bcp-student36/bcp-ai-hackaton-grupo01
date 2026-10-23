@@ -22,17 +22,19 @@ const documentError = {
   message: "Documento inválido",
 };
 
+export const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:\+51)?9[0-9]{8}$/)
+  .transform((value) => (value.startsWith("+51") ? value : `+51${value}`));
+
 export const verificationInputSchema = z
   .strictObject(documentFields)
   .refine(validDocument, documentError);
 export const registrationInputSchema = z
   .strictObject({
     ...documentFields,
-    phone: z
-      .string()
-      .trim()
-      .regex(/^(?:\+51)?9[0-9]{8}$/)
-      .transform((value) => (value.startsWith("+51") ? value : `+51${value}`)),
+    phone: phoneSchema,
     email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
     password: passwordSchema,
   })

@@ -1,4 +1,4 @@
-import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { randomBytes, scrypt, scryptSync, timingSafeEqual } from "node:crypto";
 import type { PasswordHasher } from "../../application/ports.js";
 
 const KEY_LENGTH = 64;
@@ -13,6 +13,12 @@ function derive(password: string, salt: Buffer): Promise<Buffer> {
       else resolve(key);
     });
   });
+}
+
+export function hashPasswordSync(password: string): string {
+  const salt = randomBytes(SALT_LENGTH);
+  const key = scryptSync(password, salt, KEY_LENGTH, PARAMETERS);
+  return `${PREFIX}$${salt.toString("hex")}$${key.toString("hex")}`;
 }
 
 export class ScryptPasswords implements PasswordHasher {
