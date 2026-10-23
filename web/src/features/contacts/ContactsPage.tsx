@@ -69,7 +69,6 @@ function ContactsView({ client }: { client: ContactsClient }) {
   const [contacts, setContacts] = useState<ContactView[]>([]);
   const [listState, setListState] = useState<ListState>("loading");
   const [reloadKey, setReloadKey] = useState(0);
-  const [selected, setSelected] = useState<ContactView | undefined>();
   const latestSearch = useRef(0);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -145,16 +144,8 @@ function ContactsView({ client }: { client: ContactsClient }) {
       <ContactList
         contacts={contacts}
         listState={listState}
-        selectedId={selected?.id}
         onRetry={retryContacts}
-        onSelect={setSelected}
       />
-
-      {selected ? (
-        <StatusMessage tone="info">
-          Destinatario seleccionado: {selected.displayName}
-        </StatusMessage>
-      ) : null}
     </PageShell>
   );
 }

@@ -8,15 +8,11 @@ export type ListState = "loading" | "ready" | "error";
 export function ContactList({
   contacts,
   listState,
-  selectedId,
   onRetry,
-  onSelect,
 }: {
   contacts: ContactView[];
   listState: ListState;
-  selectedId: string | undefined;
   onRetry: () => void;
-  onSelect: (contact: ContactView) => void;
 }) {
   if (listState === "loading") {
     return <StatusMessage tone="info">Cargando contactos…</StatusMessage>;
@@ -53,16 +49,6 @@ export function ContactList({
             >
               Pagar a {contact.displayName}
             </Link>
-            <button
-              type="button"
-              className="button-secondary"
-              aria-pressed={contact.id === selectedId}
-              onClick={() => {
-                onSelect(contact);
-              }}
-            >
-              Seleccionar {contact.displayName}
-            </button>
           </span>
         </li>
       ))}

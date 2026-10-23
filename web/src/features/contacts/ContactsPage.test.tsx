@@ -173,7 +173,7 @@ test("a failed save keeps the user on contacts with feedback", async () => {
   expect(screen.getByText("/")).toBeVisible();
 });
 
-test("a missing recipient shows feedback and selects nobody", async () => {
+test("a missing recipient shows feedback", async () => {
   await renderPage(fakeClient());
 
   await searchPhone("999999999");
@@ -181,9 +181,6 @@ test("a missing recipient shows feedback and selects nobody", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "No encontramos un destinatario activo con ese número.",
   );
-  expect(
-    screen.queryByText(/Destinatario seleccionado/),
-  ).not.toBeInTheDocument();
 });
 
 test("an unexpected lookup failure shows the generic message", async () => {
@@ -224,22 +221,6 @@ test("a failed contact list can be retried", async () => {
   expect(await screen.findByText(SAVED.displayName)).toBeVisible();
 });
 
-test("selecting a saved contact makes it the recipient", async () => {
-  await renderPage(
-    fakeClient({ listContacts: () => Promise.resolve([SAVED]) }),
-  );
-
-  await userEvent.click(
-    await screen.findByRole("button", {
-      name: `Seleccionar ${SAVED.displayName}`,
-    }),
-  );
-
-  expect(
-    screen.getByText(`Destinatario seleccionado: ${SAVED.displayName}`),
-  ).toBeVisible();
-});
-
 test("contacts require login and send no request while signed out", async () => {
   const listContacts = vi.fn(() => Promise.resolve([]));
   await renderPage(fakeClient({ listContacts }), { signedIn: false });
@@ -260,11 +241,7 @@ test("logout clears the contact query state", async () => {
       listContacts: () => Promise.resolve([SAVED]),
     }),
   );
-  await userEvent.click(
-    await screen.findByRole("button", {
-      name: `Seleccionar ${SAVED.displayName}`,
-    }),
-  );
+  expect(await screen.findByText(SAVED.displayName)).toBeVisible();
 
   await userEvent.click(screen.getByRole("button", { name: "Salir" }));
 
@@ -272,9 +249,6 @@ test("logout clears the contact query state", async () => {
     await screen.findByText("Inicia sesión para ver tus contactos."),
   ).toBeVisible();
   expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
-  expect(
-    screen.queryByText(/Destinatario seleccionado/),
-  ).not.toBeInTheDocument();
 });
 
 test("switching accounts discards the previous account contacts and selection", async () => {
@@ -283,11 +257,7 @@ test("switching accounts discards the previous account contacts and selection", 
     .mockResolvedValueOnce([SAVED])
     .mockResolvedValueOnce([]);
   await renderPage(fakeClient({ listContacts }));
-  await userEvent.click(
-    await screen.findByRole("button", {
-      name: `Seleccionar ${SAVED.displayName}`,
-    }),
-  );
+  expect(await screen.findByText(SAVED.displayName)).toBeVisible();
 
   await userEvent.click(
     screen.getByRole("button", { name: "Entrar como Beto" }),
@@ -297,9 +267,6 @@ test("switching accounts discards the previous account contacts and selection", 
     await screen.findByText("Aún no tienes contactos guardados."),
   ).toBeVisible();
   expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
-  expect(
-    screen.queryByText(/Destinatario seleccionado/),
-  ).not.toBeInTheDocument();
   expect(listContacts).toHaveBeenCalledTimes(2);
 });
 
