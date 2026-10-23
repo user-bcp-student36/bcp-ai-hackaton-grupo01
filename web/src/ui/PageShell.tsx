@@ -6,6 +6,7 @@ export const DEMO_DISCLAIMER =
   "Demo local: identidades y fondos ficticios. No es una billetera real.";
 
 const NAV_LINKS = [
+  { to: "/", label: "Inicio" },
   { to: "/billetera", label: "Saldo" },
   { to: "/contactos", label: "Contactos" },
   { to: "/pagos", label: "Pagos" },

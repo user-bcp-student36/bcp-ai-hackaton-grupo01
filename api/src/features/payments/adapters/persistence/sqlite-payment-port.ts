@@ -8,6 +8,7 @@ import type {
   TransferOutcome,
 } from "../../application/ports.js";
 import { transferPayment } from "../../application/transfer.js";
+import { SimulatedPaymentProvider } from "../provider/simulated-provider.js";
 import { SqlitePayments } from "./sqlite-payments.js";
 
 class SqliteContactReader implements ContactReader {
@@ -52,6 +53,7 @@ export class SqlitePaymentPort implements PaymentPort {
     this.transferUseCase = transferPayment({
       ledger: this.ledger,
       contacts: new SqliteContactReader(database),
+      provider: new SimulatedPaymentProvider(database),
       ...options,
     });
   }

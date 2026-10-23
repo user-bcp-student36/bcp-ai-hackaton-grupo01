@@ -13,12 +13,14 @@ import type { PaymentCommand } from "../domain/payment.js";
 import type {
   ContactReader,
   PaymentLedger,
+  PaymentProvider,
   PaymentRecord,
 } from "./ports.js";
 
 type Dependencies = {
   ledger: PaymentLedger;
   contacts: ContactReader;
+  provider?: PaymentProvider;
   maxAmountCents: number;
   now: () => string;
   newId: () => string;
@@ -60,6 +62,12 @@ export function transferPayment(deps: Dependencies) {
       if (!deps.contacts.hasSavedContactWallet(command.sourceUserId, recipient.id)) {
         throw new ContactRequired();
       }
+      // Before any write: a provider failure moves no money and consumes no key.
+      deps.provider?.authorize({
+        sourceUserId: command.sourceUserId,
+        idempotencyKey: command.idempotencyKey,
+        recipientWalletId: recipient.id,
+      });
 
       const updatedAt = deps.now();
       if (!tx.debit(sender.id, command.amountCents, updatedAt)) {

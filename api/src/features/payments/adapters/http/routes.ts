@@ -52,6 +52,14 @@ const failures: Record<PaymentErrorCode, FailureMapping> = {
     status: 503,
     message: "Almacenamiento no disponible.",
   },
+  PAYMENT_DECLINED: {
+    status: 409,
+    message: "El proveedor rechazó el pago.",
+  },
+  PROVIDER_TIMEOUT: {
+    status: 503,
+    message: "El proveedor no respondió a tiempo.",
+  },
 };
 
 const safeError = (code: string, message: string): ErrorResponse => ({

@@ -13,11 +13,27 @@ export const SEED_RECIPIENT = {
 
 const SEEDED_AT = "2026-10-23T00:00:00.000Z";
 
-// Idempotent: an existing recipient is left untouched, so funds are never reset.
+export type SeedRecipient = {
+  readonly userId: string;
+  readonly walletId: string;
+  readonly documentNumber: string;
+  readonly phone: string;
+  readonly email: string;
+  readonly openingBalanceCents: number;
+};
+
 export function seedContactRecipient(database: DatabaseSync): void {
+  seedReceivingUser(database, SEED_RECIPIENT);
+}
+
+// Idempotent: an existing recipient is left untouched, so funds are never reset.
+export function seedReceivingUser(
+  database: DatabaseSync,
+  recipient: SeedRecipient,
+): void {
   const exists = database
     .prepare("SELECT 1 FROM users WHERE id = ?")
-    .get(SEED_RECIPIENT.userId);
+    .get(recipient.userId);
   if (exists) return;
 
   // Nobody knows this password: the recipient only receives, it never logs in.
@@ -30,10 +46,10 @@ export function seedContactRecipient(database: DatabaseSync): void {
        VALUES (?, 'DNI', ?, ?, ?, ?, NULL, 'activa', 1, ?, ?)`,
     )
     .run(
-      SEED_RECIPIENT.userId,
-      SEED_RECIPIENT.documentNumber,
-      SEED_RECIPIENT.phone,
-      SEED_RECIPIENT.email,
+      recipient.userId,
+      recipient.documentNumber,
+      recipient.phone,
+      recipient.email,
       passwordHash,
       SEEDED_AT,
       SEEDED_AT,
@@ -41,16 +57,16 @@ export function seedContactRecipient(database: DatabaseSync): void {
   database
     .prepare(`INSERT INTO wallets VALUES (?, ?, 'PEN', ?, ?, ?)`)
     .run(
-      SEED_RECIPIENT.walletId,
-      SEED_RECIPIENT.userId,
-      SEED_RECIPIENT.openingBalanceCents,
+      recipient.walletId,
+      recipient.userId,
+      recipient.openingBalanceCents,
       SEEDED_AT,
       SEEDED_AT,
     );
   database
     .prepare(`INSERT INTO wallet_openings VALUES (?, ?, ?)`)
-    .run(SEED_RECIPIENT.walletId, SEED_RECIPIENT.openingBalanceCents, SEEDED_AT);
+    .run(recipient.walletId, recipient.openingBalanceCents, SEEDED_AT);
   database
     .prepare("UPDATE users SET wallet_id = ? WHERE id = ?")
-    .run(SEED_RECIPIENT.walletId, SEED_RECIPIENT.userId);
+    .run(recipient.walletId, recipient.userId);
 }

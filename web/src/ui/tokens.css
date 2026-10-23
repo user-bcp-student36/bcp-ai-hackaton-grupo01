@@ -500,7 +500,71 @@ button:disabled {
   }
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.app-nav {
+  min-width: 0;
+  flex: 1 1 100%;
+  padding-bottom: var(--space-xs);
+  scrollbar-width: none;
+}
+
+.app-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.app-nav a {
+  flex: none;
+}
+
+.page-shell,
+.page-shell main {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+input,
+select,
+button {
+  max-width: 100%;
+}
+
+@media (max-width: 30rem) {
+  .page-shell {
+    padding: var(--space-lg) var(--space-sm);
+  }
+
+  .app-header-inner {
+    padding: var(--space-sm);
+  }
+
+  button,
+  .button-link {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+
+  input,
+  select {
+    font-size: 1rem;
+  }
+}
+
 @media (min-width: 40rem) {
+  .app-nav {
+    flex: 1;
+  }
+
   .page-shell {
     padding-top: calc(var(--space-xl) + var(--space-md));
   }

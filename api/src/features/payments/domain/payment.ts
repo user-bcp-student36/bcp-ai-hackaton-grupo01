@@ -65,6 +65,20 @@ export class StorageUnavailable extends Error {
   }
 }
 
+export class PaymentDeclined extends Error {
+  readonly code = "PAYMENT_DECLINED";
+  constructor() {
+    super("El proveedor rechazó el pago.");
+  }
+}
+
+export class ProviderTimeout extends Error {
+  readonly code = "PROVIDER_TIMEOUT";
+  constructor() {
+    super("El proveedor no respondió a tiempo.");
+  }
+}
+
 // Ordered fields, not JSON key order, so equal payloads always hash equal.
 export function paymentFingerprint(
   command: Pick<PaymentCommand, "recipientWalletId" | "amountCents">,

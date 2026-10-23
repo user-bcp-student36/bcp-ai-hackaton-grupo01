@@ -25,6 +25,15 @@ export interface ContactReader {
   hasSavedContactWallet(ownerUserId: string, walletId: string): boolean;
 }
 
+// The simulated payment provider. It throws PaymentDeclined or ProviderTimeout before any money moves.
+export interface PaymentProvider {
+  authorize(input: {
+    sourceUserId: string;
+    idempotencyKey: string;
+    recipientWalletId: string;
+  }): void;
+}
+
 export interface PaymentTransaction {
   findRetryKey(sourceUserId: string, key: string): RetryKeyRecord | null;
   findPaymentById(paymentId: string): PaymentRecord | null;
@@ -80,6 +89,8 @@ export const paymentErrorCodes = [
   "IDEMPOTENCY_CONFLICT",
   "PAYMENT_NOT_FOUND",
   "STORAGE_UNAVAILABLE",
+  "PAYMENT_DECLINED",
+  "PROVIDER_TIMEOUT",
 ] as const;
 
 export type PaymentErrorCode = (typeof paymentErrorCodes)[number];
