@@ -21,7 +21,7 @@ import { authRoutes } from "./features/auth/adapters/http/routes.js";
 import { SqliteSessions } from "./features/auth/adapters/persistence/sqlite-sessions.js";
 import { LoginThrottle } from "./features/auth/application/login-throttle.js";
 import { getAccount } from "./features/auth/application/get-account.js";
-import { loginUser } from "./features/auth/application/login-user.js";
+import { loginUser, openSession } from "./features/auth/application/login-user.js";
 import { resolveSession } from "./features/auth/application/resolve-session.js";
 import { Unauthenticated } from "./features/auth/domain/session.js";
 import { biometricRoutes } from "./features/biometric/adapters/http/routes.js";
@@ -183,6 +183,13 @@ export async function buildApp(deps: {
     newToken: () => randomBytes(32).toString("base64url"),
     sessionTtlSeconds: deps.config.SESSION_TTL_SECONDS,
   });
+  const open = openSession({
+    sessions,
+    now: clock,
+    newId: randomUUID,
+    newToken: () => randomBytes(32).toString("base64url"),
+    sessionTtlSeconds: deps.config.SESSION_TTL_SECONDS,
+  });
   await app.register(authRoutes, {
     login,
     revoke: revokeSession({ sessions, now: clock }),
@@ -210,6 +217,7 @@ export async function buildApp(deps: {
         openingBalanceCents: deps.config.DEMO_INITIAL_BALANCE_CENTS,
       }),
       login,
+      open,
     }),
     throttle: new LoginThrottle({
       maxAttempts: deps.config.AUTH_RATE_LIMIT_MAX,

@@ -80,7 +80,7 @@ export function BiometricPage() {
   function handleEnter(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!profile || enter.isPending) return;
-    if (!passwordSchema.safeParse(password).success) {
+    if (!profile.hasAccount && !passwordSchema.safeParse(password).success) {
       setFieldError(PASSWORD_MESSAGE);
       return;
     }
@@ -92,7 +92,7 @@ export function BiometricPage() {
     setFieldError(undefined);
     enter.mutate({
       documentNumber: profile.documentNumber,
-      password,
+      ...(profile.hasAccount ? {} : { password }),
       faceImage,
     });
   }
@@ -173,26 +173,25 @@ export function BiometricPage() {
         <StatusMessage tone={isUnavailable ? "error" : "info"}>
           {CAMERA_MESSAGES[camera.state]}
         </StatusMessage>
-        <TextField
-          id="biometric-password"
-          label={
-            profile.hasAccount
-              ? "Contraseña de 6 dígitos"
-              : "Crea tu contraseña de 6 dígitos"
-          }
-          type="password"
-          inputMode="numeric"
-          autoComplete={
-            profile.hasAccount ? "current-password" : "new-password"
-          }
-          value={password}
-          error={fieldError}
-          maxLength={PASSWORD_LENGTH}
-          placeholder="6 números"
-          onChange={(event) => {
-            setPassword(digitsOnly(event.target.value, PASSWORD_LENGTH));
-          }}
-        />
+        {profile.hasAccount ? null : (
+          <TextField
+            id="biometric-password"
+            label="Crea tu contraseña de 6 dígitos"
+            type="password"
+            inputMode="numeric"
+            autoComplete="new-password"
+            value={password}
+            error={fieldError}
+            maxLength={PASSWORD_LENGTH}
+            placeholder="6 números"
+            onChange={(event) => {
+              setPassword(digitsOnly(event.target.value, PASSWORD_LENGTH));
+            }}
+          />
+        )}
+        {profile.hasAccount && fieldError ? (
+          <StatusMessage tone="error">{fieldError}</StatusMessage>
+        ) : null}
         {enter.isError ? (
           <StatusMessage tone="error">
             {describeError(enter.error)}

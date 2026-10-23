@@ -70,12 +70,11 @@ test("the first biometric entry creates the account with the preloaded data", as
   expect(body.user.walletId).not.toBeNull();
 });
 
-test("a later biometric entry logs in with the same password", async () => {
+test("a later biometric entry needs only the face, no password", async () => {
   await enter({ documentNumber: DEMO_DNI, password: PASSWORD, faceImage: FACE_IMAGE });
 
   const response = await enter({
     documentNumber: DEMO_DNI,
-    password: PASSWORD,
     faceImage: FACE_IMAGE,
   });
 
@@ -83,16 +82,31 @@ test("a later biometric entry logs in with the same password", async () => {
   expect(biometricSessionResponseSchema.parse(response.json()).created).toBe(false);
 });
 
-test("a wrong password is rejected for an existing biometric account", async () => {
-  await enter({ documentNumber: DEMO_DNI, password: PASSWORD, faceImage: FACE_IMAGE });
+test("the first biometric entry without a password is a validation error", async () => {
+  const response = await enter({
+    documentNumber: DEMO_DNI,
+    faceImage: FACE_IMAGE,
+  });
 
+  expect(response.statusCode).toBe(400);
+  expect(response.json()).toMatchObject({ error: { code: "VALIDATION_ERROR" } });
+});
+
+test("a malformed password is a validation error", async () => {
   const response = await enter({
     documentNumber: DEMO_DNI,
     password: "000000",
     faceImage: FACE_IMAGE,
   });
+  expect(response.statusCode).toBe(201);
 
-  expect(response.statusCode).toBe(401);
+  const bad = await enter({
+    documentNumber: "45871236",
+    password: "12",
+    faceImage: FACE_IMAGE,
+  });
+
+  expect(bad.statusCode).toBe(400);
 });
 
 test("a document outside the seeded list is not enabled", async () => {

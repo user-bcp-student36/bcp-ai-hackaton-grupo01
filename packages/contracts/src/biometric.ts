@@ -21,7 +21,7 @@ export const biometricProfileResponseSchema = z.strictObject({
 
 export const biometricSessionInputSchema = z.strictObject({
   documentNumber: dniSchema,
-  password: passwordSchema,
+  password: passwordSchema.optional(),
   faceImage: z
     .string()
     .startsWith(FACE_IMAGE_PREFIX)

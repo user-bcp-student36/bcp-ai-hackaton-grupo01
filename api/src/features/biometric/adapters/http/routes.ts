@@ -11,14 +11,17 @@ import type { LoginThrottle } from "../../../auth/application/login-throttle.js"
 import type { LoginResult } from "../../../auth/application/login-user.js";
 import { InvalidCredentials } from "../../../auth/domain/session.js";
 import { UserAlreadyExists } from "../../../onboarding/domain/identity.js";
-import type { BiometricProfile } from "../../application/biometric-access.js";
+import {
+  PasswordRequired,
+  type BiometricProfile,
+} from "../../application/biometric-access.js";
 import { BiometricNotEnabled } from "../../domain/demo-profiles.js";
 
 export type BiometricRoutesDeps = {
   profile: (documentNumber: string) => BiometricProfile;
   enter: (input: {
     documentNumber: string;
-    password: string;
+    password?: string;
   }) => Promise<LoginResult & { created: boolean }>;
   throttle: LoginThrottle;
 };
@@ -101,6 +104,10 @@ export const biometricRoutes: FastifyPluginCallback<BiometricRoutesDeps> = (
         if (error instanceof BiometricNotEnabled) {
           reply.code(404);
           return safeError("BIOMETRIC_NOT_ENABLED", NOT_ENABLED);
+        }
+        if (error instanceof PasswordRequired) {
+          reply.code(400);
+          return safeError("VALIDATION_ERROR", error.message);
         }
         if (error instanceof InvalidCredentials) {
           reply.code(401);
