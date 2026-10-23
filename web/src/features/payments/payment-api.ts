@@ -22,6 +22,8 @@ const REJECTION_MESSAGES: Partial<Record<string, string>> = {
   BALANCE_LIMIT_EXCEEDED: "El destinatario no puede recibir ese monto.",
   IDEMPOTENCY_CONFLICT:
     "Esta operación ya se usó con otros datos. Vuelve a intentarlo.",
+  PAYMENT_DECLINED:
+    "El proveedor rechazó el pago. No se descontó dinero; prueba con otro contacto o contacta a soporte.",
 };
 const DEFAULT_REJECTION_MESSAGE = "No se pudo completar el pago.";
 

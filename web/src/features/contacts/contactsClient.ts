@@ -1,6 +1,6 @@
 import { errorResponseSchema } from "@wallet/contracts";
 import { z } from "zod";
-import { ApiError, DEFAULT_ERROR_MESSAGE } from "../../lib/apiClient";
+import { ApiError, DEFAULT_ERROR_MESSAGE, REQUEST_TIMEOUT_MS } from "../../lib/apiClient";
 
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1";
@@ -40,6 +40,7 @@ async function request(
   const hasBody = init?.body !== undefined;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${accessToken}`,

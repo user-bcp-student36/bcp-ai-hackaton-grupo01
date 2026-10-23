@@ -86,7 +86,7 @@ function ScanQrForm({ token, userId }: { token: string; userId: string }) {
   return (
     <PageShell title="Pagar con QR">
       {isScanning && !cameraFailed ? (
-        <div className="camera-frame">
+        <div className="camera-frame is-rear">
           <video ref={videoRef} muted playsInline aria-label="Cámara para leer el QR" />
         </div>
       ) : null}

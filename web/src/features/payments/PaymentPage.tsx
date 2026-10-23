@@ -39,7 +39,19 @@ type Props = {
   ownerUserId: string;
   accessToken: string;
   contacts: readonly SavedContact[];
+  retryPolicy?: RetryPolicy;
 };
+
+export type RetryPolicy = { maxRetries: number; delayMs: number };
+
+// Automatic retries reuse the attempt's idempotency key, so they can never charge twice.
+const DEFAULT_RETRY_POLICY: RetryPolicy = { maxRetries: 2, delayMs: 1_000 };
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 // Preselect the recipient from a "Pagar" link or QR, or when there is only one choice.
 function initialDraft(
@@ -61,7 +73,12 @@ function initialDraft(
   };
 }
 
-export function PaymentPage({ ownerUserId, accessToken, contacts }: Props) {
+export function PaymentPage({
+  ownerUserId,
+  accessToken,
+  contacts,
+  retryPolicy = DEFAULT_RETRY_POLICY,
+}: Props) {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const requestedWalletId = searchParams.get("to");
@@ -104,7 +121,16 @@ export function PaymentPage({ ownerUserId, accessToken, contacts }: Props) {
     setBusy(true);
     setFailure(undefined);
     try {
-      applyResult(await run(current, accessToken));
+      let result = await run(current, accessToken);
+      for (
+        let retry = 0;
+        retry < retryPolicy.maxRetries && result.kind === "unknown";
+        retry += 1
+      ) {
+        await wait(retryPolicy.delayMs);
+        result = await resolvePaymentAttempt(current, accessToken);
+      }
+      applyResult(result);
     } finally {
       inFlight.current = false;
       setBusy(false);

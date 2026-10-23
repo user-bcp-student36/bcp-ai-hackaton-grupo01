@@ -2,6 +2,7 @@ import { errorResponseSchema } from "@wallet/contracts";
 import { z } from "zod";
 
 export const DEFAULT_ERROR_MESSAGE = "No se pudo completar la solicitud.";
+export const REQUEST_TIMEOUT_MS = 10_000;
 
 // Only the error object is read: some failures (e.g. 500 registration) add
 // sibling keys such as walletId, which the strict top-level schema rejects.
@@ -46,7 +47,10 @@ async function send<T>(
   schema: z.ZodType<T>,
   baseUrl: string,
 ): Promise<T> {
-  const response = await fetch(`${baseUrl}${path}`, init);
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...init,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   let body: unknown;
   try {
     body = (await response.json()) as unknown;
@@ -144,6 +148,7 @@ export async function deleteAuthorized(
 ): Promise<void> {
   const response = await fetch(`${baseUrl}${path}`, {
     method: "DELETE",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {

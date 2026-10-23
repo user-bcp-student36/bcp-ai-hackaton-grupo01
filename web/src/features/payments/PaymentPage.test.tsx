@@ -9,7 +9,7 @@ import {
   clearPaymentAttempt,
   hasUnresolvedPaymentAttempt,
 } from "./payment-attempt";
-import { PaymentPage } from "./PaymentPage";
+import { PaymentPage, type RetryPolicy } from "./PaymentPage";
 
 const ANA_WALLET = "wallet-demo-ana";
 const OWNER = "owner-a";
@@ -91,7 +91,10 @@ const TEST_CONTACTS = [
 ];
 const ACCESS_TOKEN = "token-owner-a";
 
-function renderPage(ownerUserId: string = OWNER) {
+function renderPage(
+  ownerUserId: string = OWNER,
+  retryPolicy: RetryPolicy = { maxRetries: 0, delayMs: 0 },
+) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
@@ -102,6 +105,7 @@ function renderPage(ownerUserId: string = OWNER) {
           ownerUserId={ownerUserId}
           accessToken={ACCESS_TOKEN}
           contacts={TEST_CONTACTS}
+          retryPolicy={retryPolicy}
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -286,6 +290,70 @@ test("Clears the attempt after a business rejection so the next payment gets a n
   ).toBeVisible();
   const [first, second] = requestsOf(fetchMock);
   expect(second?.key).not.toBe(first?.key);
+});
+
+test("Retries a provider timeout automatically with the same key and succeeds", async () => {
+  const timeout = () =>
+    json(
+      { error: { code: "PROVIDER_TIMEOUT", message: "El proveedor no respondió a tiempo." } },
+      503,
+    );
+  const notFound = () =>
+    json({ error: { code: "PAYMENT_NOT_FOUND", message: "No encontrado." } }, 404);
+  const fetchMock = stubFetch(
+    sequence(timeout, notFound, () => json(paymentJson(), 201)),
+  );
+  const user = userEvent.setup();
+  renderPage(OWNER, { maxRetries: 2, delayMs: 0 });
+
+  await reviewPayment(user, "25.50");
+  await user.click(confirmButton());
+
+  expect(
+    await screen.findByRole("heading", { name: "Pago realizado" }),
+  ).toBeVisible();
+  const [first, lookup, retried] = requestsOf(fetchMock);
+  expect(lookup?.url).toContain(`/payments/by-key/${first?.key ?? ""}`);
+  expect(retried?.key).toBe(first?.key);
+});
+
+test("Stops after the retry limit and offers a manual check", async () => {
+  const timeout = () =>
+    json(
+      { error: { code: "PROVIDER_TIMEOUT", message: "El proveedor no respondió a tiempo." } },
+      503,
+    );
+  stubFetch(() => timeout());
+  const user = userEvent.setup();
+  renderPage(OWNER, { maxRetries: 1, delayMs: 0 });
+
+  await reviewPayment(user, "25.50");
+  await user.click(confirmButton());
+
+  expect(
+    await screen.findByRole("heading", { name: "Resultado por confirmar" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Consultar resultado" }),
+  ).toBeVisible();
+});
+
+test("Shows a clear message when the provider declines and frees the form", async () => {
+  stubFetch(() =>
+    json(
+      { error: { code: "PAYMENT_DECLINED", message: "El proveedor rechazó el pago." } },
+      409,
+    ),
+  );
+  const user = userEvent.setup();
+  renderPage();
+
+  await reviewPayment(user, "25.50");
+  await user.click(confirmButton());
+
+  expect(await screen.findByText(/El proveedor rechazó el pago/)).toBeVisible();
+  expect(sessionStorage.length).toBe(0);
+  expect(screen.getByRole("button", { name: "Revisar pago" })).toBeVisible();
 });
 
 test("Restores an unresolved attempt for its own user only", async () => {

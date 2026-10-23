@@ -434,6 +434,10 @@ button:disabled {
   transform: scaleX(-1);
 }
 
+.camera-frame.is-rear video {
+  transform: none;
+}
+
 .profile-data {
   display: grid;
   grid-template-columns: max-content 1fr;

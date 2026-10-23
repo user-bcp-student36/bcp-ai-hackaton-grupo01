@@ -1,29 +1,18 @@
 import { useEffect, useState, type RefObject } from "react";
+import jsQR from "jsqr";
 
-const SCAN_INTERVAL_MS = 400;
-
-type DetectedCode = { rawValue: string };
-type BarcodeDetectorLike = {
-  detect: (source: HTMLVideoElement) => Promise<DetectedCode[]>;
-};
-type BarcodeDetectorConstructor = new (options: {
-  formats: string[];
-}) => BarcodeDetectorLike;
+const SCAN_INTERVAL_MS = 250;
 
 export type ScannerState = "idle" | "starting" | "scanning" | "denied" | "unsupported";
 
-function detectorConstructor(): BarcodeDetectorConstructor | undefined {
-  return (window as { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
-}
-
-// Reads QR codes from the rear camera. Browsers without BarcodeDetector report "unsupported".
+// Decodes QR codes from the rear camera in any browser; getUserMedia needs HTTPS or localhost.
 export function useQrScanner(
   videoRef: RefObject<HTMLVideoElement | null>,
   isActive: boolean,
   onDetect: (rawValue: string) => void,
 ) {
   const [opened, setOpened] = useState<"starting" | "scanning" | "denied">("starting");
-  const isSupported = "mediaDevices" in navigator && detectorConstructor() !== undefined;
+  const isSupported = "mediaDevices" in navigator;
   const state: ScannerState = !isActive
     ? "idle"
     : isSupported
@@ -31,34 +20,32 @@ export function useQrScanner(
       : "unsupported";
 
   useEffect(() => {
-    const Detector = detectorConstructor();
-    if (!isActive || !isSupported || !Detector) return;
-    const detector = new Detector({ formats: ["qr_code"] });
+    if (!isActive || !isSupported) return;
     let isCurrent = true;
     let stream: MediaStream | undefined;
     let timer: number | undefined;
+    const canvas = document.createElement("canvas");
 
     function scan() {
       const video = videoRef.current;
       if (!isCurrent || !video) return;
-      void detector.detect(video).then(
-        (codes) => {
-          const value = codes[0]?.rawValue;
-          if (!isCurrent) return;
-          if (value) {
-            onDetect(value);
-            return;
-          }
-          timer = window.setTimeout(scan, SCAN_INTERVAL_MS);
-        },
-        () => {
-          if (isCurrent) timer = window.setTimeout(scan, SCAN_INTERVAL_MS);
-        },
-      );
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (context && video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(frame.data, frame.width, frame.height);
+        if (code?.data) {
+          onDetect(code.data);
+          return;
+        }
+      }
+      timer = window.setTimeout(scan, SCAN_INTERVAL_MS);
     }
 
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: "environment" }, audio: false })
+      .getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
       .then(
         async (granted) => {
           if (!isCurrent) {
