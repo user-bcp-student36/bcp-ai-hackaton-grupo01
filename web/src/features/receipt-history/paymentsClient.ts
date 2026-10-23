@@ -17,6 +17,7 @@ export const paymentViewSchema = z.strictObject({
   currency: z.literal("PEN"),
   status: z.literal("SUCCEEDED"),
   createdAt: z.iso.datetime(),
+  counterpartyName: z.string(),
 });
 
 const listPaymentsResponseSchema = z.strictObject({

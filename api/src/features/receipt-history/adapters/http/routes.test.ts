@@ -218,6 +218,7 @@ function payment(id: string, source: string, destination: string, createdAt: str
     currency: "PEN",
     status: "SUCCEEDED",
     createdAt,
+    counterpartyName: "Contacto ***123",
   };
 }
 

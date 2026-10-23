@@ -11,6 +11,7 @@ const PAYMENT: PaymentView = {
   currency: "PEN",
   status: "SUCCEEDED",
   createdAt: "2026-10-21T14:30:00.000Z",
+  counterpartyName: "Andrés K***",
 };
 
 describe("directionFor", () => {

@@ -247,7 +247,10 @@ export async function buildApp(deps: {
     (phone) =>
       findDemoProfileByPhone(phone)?.fullName ?? findSeedFullName(phone),
   );
-  const payments = new SqlitePaymentQueries(database);
+  const payments = new SqlitePaymentQueries(
+    database,
+    (phone) => findDemoProfileByPhone(phone)?.fullName ?? null,
+  );
   await app.register(receiptHistoryRoutes, {
     authenticate: (token) => {
       try {

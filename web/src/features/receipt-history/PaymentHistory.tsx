@@ -84,6 +84,7 @@ function HistoryRow({
     <li className="history-row">
       <div className="history-row-main">
         <p className="history-direction">{directionLabel(direction)}</p>
+        <p className="history-counterparty">{payment.counterpartyName}</p>
         <p className="history-amount">{formatPen(payment.amountCents)}</p>
         <time className="history-date" dateTime={payment.createdAt}>
           {formatPaymentDate(payment.createdAt)}

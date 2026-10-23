@@ -10,6 +10,7 @@ export const paymentViewSchema = z.strictObject({
   currency: z.literal("PEN"),
   status: z.literal("SUCCEEDED"),
   createdAt: z.string(),
+  counterpartyName: z.string(),
 });
 
 export type PaymentView = z.infer<typeof paymentViewSchema>;

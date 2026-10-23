@@ -15,11 +15,18 @@ const paymentsTable = `
     created_at TEXT NOT NULL
   );`;
 
+const usersAndWallets = `
+  CREATE TABLE users (id TEXT PRIMARY KEY, phone TEXT, full_name TEXT);
+  CREATE TABLE wallets (id TEXT PRIMARY KEY, user_id TEXT);
+  INSERT INTO users VALUES ('u1', '911111111', NULL), ('u2', '922222222', 'María Quispe'), ('u3', '933333333', NULL);
+  INSERT INTO wallets VALUES ('w1', 'u1'), ('w2', 'u2'), ('w3', 'u3');`;
+
 let database: DatabaseSync;
 
 beforeEach(() => {
   database = new DatabaseSync(":memory:");
   database.exec(paymentsTable);
+  database.exec(usersAndWallets);
   const insert = database.prepare(
     "INSERT INTO payments VALUES (?, ?, ?, 'contact', 1000, 'PEN', 'SUCCEEDED', ?)",
   );
@@ -52,7 +59,20 @@ test("maps columns to the PaymentView fields", () => {
     currency: "PEN",
     status: "SUCCEEDED",
     createdAt: "2026-10-23T10:00:00.000Z",
+    counterpartyName: "Contacto ***111",
   });
+});
+
+test("names the other wallet's owner obfuscated, for sent and received payments", () => {
+  const queries = new SqlitePaymentQueries(database, (phone) =>
+    phone === "933333333" ? "Luis Pérez" : null,
+  );
+
+  const names = Object.fromEntries(
+    queries.listForWallet("w1").map((p) => [p.id, p.counterpartyName]),
+  );
+
+  expect(names).toEqual({ "pay-a": "María Q***", "pay-b": "Luis P***" });
 });
 
 test("returns null for an unrelated wallet, same as a missing payment", () => {

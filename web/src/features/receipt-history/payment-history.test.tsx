@@ -24,6 +24,7 @@ const RECEIVED: PaymentView = {
   currency: "PEN",
   status: "SUCCEEDED",
   createdAt: "2026-10-21T14:30:00.000Z",
+  counterpartyName: "Andrés K***",
 };
 
 const SENT: PaymentView = {
@@ -35,6 +36,7 @@ const SENT: PaymentView = {
   currency: "PEN",
   status: "SUCCEEDED",
   createdAt: "2026-10-20T15:04:00.000Z",
+  counterpartyName: "María Q***",
 };
 
 const UNRELATED: PaymentView = {
@@ -46,6 +48,7 @@ const UNRELATED: PaymentView = {
   currency: "PEN",
   status: "SUCCEEDED",
   createdAt: "2026-10-19T10:00:00.000Z",
+  counterpartyName: "Luis P***",
 };
 
 type Handler = (
