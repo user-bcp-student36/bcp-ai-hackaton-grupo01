@@ -26,9 +26,9 @@
 
 ## 5. Build confirmation and uncertainty-safe payment interface
 <!-- issue: area=frontend size=M priority=p1 files=web/src/features/payments/,web/src/App.tsx -->
-- [ ] 5.1 Build amount entry and explicit recipient/amount confirmation; convert decimals via string cents, never floats; use a fake contact list and API mock.
-- [ ] 5.2 Retain one owner-bound key/payload per intent, handle unknown result via same-key query/retry, clear on logout; no token storage.
-- [ ] 5.3 Test confirmation, invalid amount, double click, timeout/404 uncertainty, same-key retry and cross-user cleanup.
+- [x] 5.1 Build amount entry and explicit recipient/amount confirmation; convert decimals via string cents, never floats; use a fake contact list and API mock.
+- [x] 5.2 Retain one owner-bound key/payload per intent, handle unknown result via same-key query/retry, clear on logout; no token storage.
+- [x] 5.3 Test confirmation, invalid amount, double click, timeout/404 uncertainty, same-key retry and cross-user cleanup.
 
 ## 6. Display durable receipt and own transaction history
 <!-- issue: area=frontend size=M priority=p1 files=web/src/features/receipt-history/,web/src/App.tsx -->
