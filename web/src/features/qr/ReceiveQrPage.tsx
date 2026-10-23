@@ -1,4 +1,5 @@
 import { useState, type SyntheticEvent } from "react";
+import { amountFilter } from "../../lib/inputFilters";
 import { Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import QRCode from "qrcode";
@@ -91,7 +92,7 @@ function ReceiveQrForm({ token }: { token: string }) {
           value={amountText}
           error={amountError}
           onChange={(event) => {
-            setAmountText(event.target.value);
+            setAmountText(amountFilter(event.target.value));
           }}
         />
         <button type="submit" disabled={create.isPending}>

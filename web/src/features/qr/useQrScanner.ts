@@ -3,7 +3,8 @@ import jsQR from "jsqr";
 
 const SCAN_INTERVAL_MS = 250;
 
-export type ScannerState = "idle" | "starting" | "scanning" | "denied" | "unsupported";
+export type ScannerState =
+  "idle" | "starting" | "scanning" | "denied" | "unsupported";
 
 // Decodes QR codes from the rear camera in any browser; getUserMedia needs HTTPS or localhost.
 export function useQrScanner(
@@ -11,7 +12,9 @@ export function useQrScanner(
   isActive: boolean,
   onDetect: (rawValue: string) => void,
 ) {
-  const [opened, setOpened] = useState<"starting" | "scanning" | "denied">("starting");
+  const [opened, setOpened] = useState<"starting" | "scanning" | "denied">(
+    "starting",
+  );
   const isSupported = "mediaDevices" in navigator;
   const state: ScannerState = !isActive
     ? "idle"
@@ -45,7 +48,10 @@ export function useQrScanner(
     }
 
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+      .getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      })
       .then(
         async (granted) => {
           if (!isCurrent) {

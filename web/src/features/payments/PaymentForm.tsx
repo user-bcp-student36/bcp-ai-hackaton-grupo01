@@ -1,4 +1,5 @@
 import type { SyntheticEvent } from "react";
+import { amountFilter } from "../../lib/inputFilters";
 import { SelectField } from "../../ui/SelectField";
 import { TextField } from "../../ui/TextField";
 import { formatPenCents } from "./amount";
@@ -6,7 +7,10 @@ import type { PaymentPayload, SavedContact } from "./payment-types";
 
 export type PaymentDraft = { recipientWalletId: string; amountText: string };
 export type PaymentDraftErrors = Partial<Record<keyof PaymentDraft, string>>;
-export type PaymentReviewData = { payload: PaymentPayload; recipientName: string };
+export type PaymentReviewData = {
+  payload: PaymentPayload;
+  recipientName: string;
+};
 
 const QUICK_AMOUNTS = ["10", "20", "50", "100"];
 
@@ -50,7 +54,7 @@ export function PaymentForm({
         value={draft.amountText}
         error={errors.amountText}
         onChange={(event) => {
-          onChange("amountText", event.target.value);
+          onChange("amountText", amountFilter(event.target.value));
         }}
       />
       <div className="amount-chips" role="group" aria-label="Montos rápidos">
@@ -94,11 +98,7 @@ export function PaymentReview({
         <button type="button" onClick={onConfirm}>
           Confirmar pago
         </button>
-        <button
-          type="button"
-          className="button-secondary"
-          onClick={onBack}
-        >
+        <button type="button" className="button-secondary" onClick={onBack}>
           Volver
         </button>
       </div>

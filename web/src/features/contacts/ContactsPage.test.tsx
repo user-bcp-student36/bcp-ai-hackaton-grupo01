@@ -8,7 +8,11 @@ import "@testing-library/jest-dom/vitest";
 import { MemoryRouter, useLocation } from "react-router";
 import { ApiError } from "../../lib/apiClient";
 import type { ContactsClient, ContactView } from "./contactsClient";
-import { SessionProvider, useSession, type ActiveSession } from "../../lib/session";
+import {
+  SessionProvider,
+  useSession,
+  type ActiveSession,
+} from "../../lib/session";
 import { ContactsPage } from "./ContactsPage";
 
 afterEach(() => {
@@ -39,10 +43,20 @@ function SessionControls() {
   const { signIn, logout } = useSession();
   return (
     <>
-      <button type="button" onClick={() => { signIn(sessionFor("ana")); }}>
+      <button
+        type="button"
+        onClick={() => {
+          signIn(sessionFor("ana"));
+        }}
+      >
         Entrar como Ana
       </button>
-      <button type="button" onClick={() => { signIn(sessionFor("beto")); }}>
+      <button
+        type="button"
+        onClick={() => {
+          signIn(sessionFor("beto"));
+        }}
+      >
         Entrar como Beto
       </button>
       <button type="button" onClick={() => void logout()}>
@@ -61,7 +75,10 @@ function renderPage(
   client: ContactsClient,
   { signedIn = true, queryClient = new QueryClient() } = {},
 ) {
-  vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))),
+  );
   const view = render(
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
@@ -74,7 +91,9 @@ function renderPage(
     </QueryClientProvider>,
   );
   if (signedIn) {
-    return userEvent.click(screen.getByRole("button", { name: "Entrar como Ana" })).then(() => view);
+    return userEvent
+      .click(screen.getByRole("button", { name: "Entrar como Ana" }))
+      .then(() => view);
   }
   return Promise.resolve(view);
 }
@@ -99,7 +118,10 @@ function fakeClient(overrides: Partial<ContactsClient> = {}): ContactsClient {
 }
 
 async function searchPhone(phone: string) {
-  await userEvent.type(screen.getByLabelText("Celular del destinatario"), phone);
+  await userEvent.type(
+    screen.getByLabelText("Celular del destinatario"),
+    phone,
+  );
   await userEvent.click(screen.getByRole("button", { name: "Buscar y pagar" }));
 }
 
@@ -137,7 +159,8 @@ test("saving a recipient discards the payment screen's cached contact list", asy
 
 test("a failed save keeps the user on contacts with feedback", async () => {
   const client = fakeClient({
-    lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
+    lookupRecipient: () =>
+      Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
     addContact: () => Promise.reject(new TypeError("Failed to fetch")),
   });
   await renderPage(client);
@@ -158,12 +181,16 @@ test("a missing recipient shows feedback and selects nobody", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "No encontramos un destinatario activo con ese número.",
   );
-  expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Destinatario seleccionado/),
+  ).not.toBeInTheDocument();
 });
 
 test("an unexpected lookup failure shows the generic message", async () => {
   const client = fakeClient({
-    lookupRecipient: vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))),
+    lookupRecipient: vi.fn(() =>
+      Promise.reject(new TypeError("Failed to fetch")),
+    ),
   });
   await renderPage(client);
 
@@ -177,7 +204,9 @@ test("an unexpected lookup failure shows the generic message", async () => {
 test("an empty contact list shows the empty state", async () => {
   await renderPage(fakeClient());
 
-  expect(await screen.findByText("Aún no tienes contactos guardados.")).toBeVisible();
+  expect(
+    await screen.findByText("Aún no tienes contactos guardados."),
+  ).toBeVisible();
 });
 
 test("a failed contact list can be retried", async () => {
@@ -196,19 +225,32 @@ test("a failed contact list can be retried", async () => {
 });
 
 test("selecting a saved contact makes it the recipient", async () => {
-  await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
+  await renderPage(
+    fakeClient({ listContacts: () => Promise.resolve([SAVED]) }),
+  );
 
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: `Seleccionar ${SAVED.displayName}`,
+    }),
+  );
 
-  expect(screen.getByText(`Destinatario seleccionado: ${SAVED.displayName}`)).toBeVisible();
+  expect(
+    screen.getByText(`Destinatario seleccionado: ${SAVED.displayName}`),
+  ).toBeVisible();
 });
 
 test("contacts require login and send no request while signed out", async () => {
   const listContacts = vi.fn(() => Promise.resolve([]));
   await renderPage(fakeClient({ listContacts }), { signedIn: false });
 
-  expect(screen.getByText("Inicia sesión para ver tus contactos.")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Ingresar" })).toHaveAttribute("href", "/ingresar");
+  expect(
+    screen.getByText("Inicia sesión para ver tus contactos."),
+  ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Ingresar" })).toHaveAttribute(
+    "href",
+    "/ingresar",
+  );
   expect(listContacts).not.toHaveBeenCalled();
 });
 
@@ -218,13 +260,21 @@ test("logout clears the contact query state", async () => {
       listContacts: () => Promise.resolve([SAVED]),
     }),
   );
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: `Seleccionar ${SAVED.displayName}`,
+    }),
+  );
 
   await userEvent.click(screen.getByRole("button", { name: "Salir" }));
 
-  expect(await screen.findByText("Inicia sesión para ver tus contactos.")).toBeVisible();
+  expect(
+    await screen.findByText("Inicia sesión para ver tus contactos."),
+  ).toBeVisible();
   expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
-  expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Destinatario seleccionado/),
+  ).not.toBeInTheDocument();
 });
 
 test("switching accounts discards the previous account contacts and selection", async () => {
@@ -233,21 +283,32 @@ test("switching accounts discards the previous account contacts and selection", 
     .mockResolvedValueOnce([SAVED])
     .mockResolvedValueOnce([]);
   await renderPage(fakeClient({ listContacts }));
-  await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.displayName}` }));
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: `Seleccionar ${SAVED.displayName}`,
+    }),
+  );
 
-  await userEvent.click(screen.getByRole("button", { name: "Entrar como Beto" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Entrar como Beto" }),
+  );
 
-  expect(await screen.findByText("Aún no tienes contactos guardados.")).toBeVisible();
+  expect(
+    await screen.findByText("Aún no tienes contactos guardados."),
+  ).toBeVisible();
   expect(screen.queryByText(SAVED.displayName)).not.toBeInTheDocument();
-  expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
+  expect(
+    screen.queryByText(/Destinatario seleccionado/),
+  ).not.toBeInTheDocument();
   expect(listContacts).toHaveBeenCalledTimes(2);
 });
 
 test("a Pagar link on each saved contact opens its payment form", async () => {
-  await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
-
-  expect(await screen.findByRole("link", { name: `Pagar a ${SAVED.displayName}` })).toHaveAttribute(
-    "href",
-    "/pagos?to=w1",
+  await renderPage(
+    fakeClient({ listContacts: () => Promise.resolve([SAVED]) }),
   );
+
+  expect(
+    await screen.findByRole("link", { name: `Pagar a ${SAVED.displayName}` }),
+  ).toHaveAttribute("href", "/pagos?to=w1");
 });

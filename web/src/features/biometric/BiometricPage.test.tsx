@@ -53,7 +53,9 @@ test("only the DNI is requested first, then the preloaded data is shown", async 
   expect(await screen.findByText("Andrés Koga")).toBeVisible();
   expect(screen.getByText("+51987000001")).toBeVisible();
   expect(screen.getByText("andres.koga@example.com")).toBeVisible();
-  expect(screen.getByLabelText("Crea tu contraseña de 6 dígitos")).toBeVisible();
+  expect(
+    screen.getByLabelText("Crea tu contraseña de 6 dígitos"),
+  ).toBeVisible();
   expect(
     screen.getByText("Este navegador no permite usar la cámara."),
   ).toBeVisible();
@@ -83,6 +85,8 @@ test("an invalid DNI is rejected without calling the API", async () => {
   await userEvent.type(screen.getByLabelText("DNI"), "123");
   await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
 
-  expect(screen.getByRole("alert")).toHaveTextContent("Ingresa un DNI de 8 dígitos.");
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "Ingresa un DNI de 8 dígitos.",
+  );
   expect(fetchMock).not.toHaveBeenCalled();
 });

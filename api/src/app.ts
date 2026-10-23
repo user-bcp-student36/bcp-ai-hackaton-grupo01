@@ -26,6 +26,7 @@ import { resolveSession } from "./features/auth/application/resolve-session.js";
 import { Unauthenticated } from "./features/auth/domain/session.js";
 import { biometricRoutes } from "./features/biometric/adapters/http/routes.js";
 import { findDemoProfileByPhone } from "./features/biometric/domain/demo-profiles.js";
+import { findSeedFullName } from "./seeds/names.js";
 import {
   enterWithBiometrics,
   getBiometricProfile,
@@ -243,7 +244,8 @@ export async function buildApp(deps: {
   });
   const contacts = new SqliteContacts(
     database,
-    (phone) => findDemoProfileByPhone(phone)?.fullName ?? null,
+    (phone) =>
+      findDemoProfileByPhone(phone)?.fullName ?? findSeedFullName(phone),
   );
   const payments = new SqlitePaymentQueries(database);
   await app.register(receiptHistoryRoutes, {

@@ -13,6 +13,7 @@ export type RegistrationFeedback = {
 export const REGISTRATION_FIELDS = [
   "documentType",
   "documentNumber",
+  "fullName",
   "phone",
   "email",
   "password",
@@ -21,6 +22,7 @@ export const REGISTRATION_FIELDS = [
 export const INITIAL_VALUES: RegistrationFormValues = {
   documentType: "DNI",
   documentNumber: "",
+  fullName: "",
   phone: "",
   email: "",
   password: "",
@@ -29,6 +31,7 @@ export const INITIAL_VALUES: RegistrationFormValues = {
 const FIELD_MESSAGES: Record<RegistrationField, string> = {
   documentType: "Elige DNI o CE.",
   documentNumber: "DNI: 8 dígitos. CE: 9 a 12 letras o números.",
+  fullName: "Ingresa tu nombre completo (2 a 80 caracteres).",
   phone:
     "Usa un celular peruano de 9 dígitos que empiece en 9. También puedes escribir +51.",
   email: "Ingresa un correo válido de hasta 254 caracteres.",

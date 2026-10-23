@@ -1,9 +1,4 @@
-import {
-  useRef,
-  useState,
-  type ReactNode,
-  type SyntheticEvent,
-} from "react";
+import { useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
 import { PageShell } from "../../ui/PageShell";
@@ -60,7 +55,8 @@ function initialDraft(
   requestedAmountCents: string | null,
 ): PaymentDraft {
   const requested = contacts.find((c) => c.walletId === requestedWalletId);
-  const preselected = requested ?? (contacts.length === 1 ? contacts[0] : undefined);
+  const preselected =
+    requested ?? (contacts.length === 1 ? contacts[0] : undefined);
   const cents = Number(requestedAmountCents);
   const amountText =
     requested && Number.isSafeInteger(cents) && cents > 0

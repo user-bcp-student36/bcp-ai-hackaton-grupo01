@@ -48,7 +48,10 @@ const UNRELATED: PaymentView = {
   createdAt: "2026-10-19T10:00:00.000Z",
 };
 
-type Handler = (url: string, init: RequestInit | undefined) => Response | Promise<Response>;
+type Handler = (
+  url: string,
+  init: RequestInit | undefined,
+) => Response | Promise<Response>;
 
 function stubApi(handler: Handler) {
   const fetchMock = vi.fn((url: string, init?: RequestInit) =>
@@ -119,7 +122,10 @@ describe("payment history (6.1)", () => {
     renderAt("/movimientos");
 
     await screen.findByText("Aún no tienes movimientos.");
-    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    const [, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
     expect(init.headers).toMatchObject({
       Authorization: "Bearer token-ana",
     });
@@ -144,7 +150,9 @@ describe("history states (6.2)", () => {
 
     expect(screen.getByText("Cargando movimientos…")).toBeVisible();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
-    expect(screen.queryByText("Aún no tienes movimientos.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Aún no tienes movimientos."),
+    ).not.toBeInTheDocument();
   });
 
   test("shows the empty state for an empty history", async () => {
@@ -152,9 +160,7 @@ describe("history states (6.2)", () => {
 
     renderAt("/movimientos");
 
-    expect(
-      await screen.findByText("Aún no tienes movimientos."),
-    ).toBeVisible();
+    expect(await screen.findByText("Aún no tienes movimientos.")).toBeVisible();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
@@ -182,15 +188,18 @@ describe("history states (6.2)", () => {
   }, 15_000);
 
   test("an expired session asks the user to sign in again", async () => {
-    stubApi(() => json({ error: { code: "UNAUTHENTICATED", message: "x" } }, 401));
+    stubApi(() =>
+      json({ error: { code: "UNAUTHENTICATED", message: "x" } }, 401),
+    );
 
     renderAt("/movimientos");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Tu sesión venció.");
-    expect(screen.getByRole("link", { name: "Vuelve a ingresar" })).toHaveAttribute(
-      "href",
-      "/ingresar",
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Tu sesión venció.",
     );
+    expect(
+      screen.getByRole("link", { name: "Vuelve a ingresar" }),
+    ).toHaveAttribute("href", "/ingresar");
   });
 
   test("without a session it asks to sign in and sends no request", () => {
@@ -234,7 +243,9 @@ describe("receipt (6.1, 6.3)", () => {
 
     const receipt = await screen.findByRole("article");
     expect(
-      within(receipt).getByRole("heading", { name: "Comprobante de transferencia" }),
+      within(receipt).getByRole("heading", {
+        name: "Comprobante de transferencia",
+      }),
     ).toBeVisible();
     expect(within(receipt).getByText(/S\/\s?100\.00/)).toBeVisible();
     expect(within(receipt).getByText("Recibido")).toBeVisible();
@@ -259,7 +270,9 @@ describe("receipt (6.1, 6.3)", () => {
     const historyText = row.textContent;
     expect(historyText).toContain("Referencia: pay-0001");
 
-    await userEvent.click(within(row).getByRole("link", { name: "Ver comprobante" }));
+    await userEvent.click(
+      within(row).getByRole("link", { name: "Ver comprobante" }),
+    );
 
     const receipt = await screen.findByRole("article");
     expect(within(receipt).getByText("pay-0001")).toBeVisible();
@@ -272,7 +285,10 @@ describe("receipt (6.1, 6.3)", () => {
   test("a receipt for a payment the wallet is not part of is denied as not found", async () => {
     stubApi((url) => {
       if (url.endsWith("/payments/pay-9999/receipt")) {
-        return json({ error: { code: "PAYMENT_NOT_FOUND", message: "x" } }, 404);
+        return json(
+          { error: { code: "PAYMENT_NOT_FOUND", message: "x" } },
+          404,
+        );
       }
       throw new Error(`unexpected ${url}`);
     });

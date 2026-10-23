@@ -19,7 +19,11 @@ export function PaymentReceiptPage({
         <Link to="/movimientos">Volver a movimientos</Link>
       </p>
       {session ? (
-        <PaymentReceipt session={session} paymentId={paymentId} client={client} />
+        <PaymentReceipt
+          session={session}
+          paymentId={paymentId}
+          client={client}
+        />
       ) : (
         <SignInRequired />
       )}

@@ -1,4 +1,12 @@
 import type { SyntheticEvent } from "react";
+import {
+  digitsOnly,
+  documentMaxLength,
+  documentNumberFilter,
+  PASSWORD_LENGTH,
+  PHONE_MAX_LENGTH,
+  phoneFilter,
+} from "../../lib/inputFilters";
 import { SelectField } from "../../ui/SelectField";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { TextField } from "../../ui/TextField";
@@ -51,19 +59,40 @@ export function RegistrationForm({
         value={values.documentNumber}
         error={errors.documentNumber}
         autoComplete="off"
+        placeholder={
+          values.documentType === "DNI" ? "Ej.: 72193412" : "Ej.: AB1234567"
+        }
+        maxLength={documentMaxLength(values.documentType)}
+        inputMode={values.documentType === "DNI" ? "numeric" : "text"}
         onChange={(event) => {
-          onFieldChange("documentNumber", event.target.value);
+          onFieldChange(
+            "documentNumber",
+            documentNumberFilter(values.documentType)(event.target.value),
+          );
+        }}
+      />
+      <TextField
+        id="fullName"
+        label="Nombre completo"
+        value={values.fullName ?? ""}
+        error={errors.fullName}
+        autoComplete="name"
+        placeholder="Ej.: María Quispe Flores"
+        onChange={(event) => {
+          onFieldChange("fullName", event.target.value);
         }}
       />
       <TextField
         id="phone"
         label="Celular (Perú)"
         type="tel"
+        maxLength={PHONE_MAX_LENGTH}
         value={values.phone}
         error={errors.phone}
         autoComplete="tel"
+        placeholder="Ej.: 987654321"
         onChange={(event) => {
-          onFieldChange("phone", event.target.value);
+          onFieldChange("phone", phoneFilter(event.target.value));
         }}
       />
       <TextField
@@ -73,6 +102,7 @@ export function RegistrationForm({
         value={values.email}
         error={errors.email}
         autoComplete="email"
+        placeholder="Ej.: maria@correo.com"
         onChange={(event) => {
           onFieldChange("email", event.target.value);
         }}
@@ -82,11 +112,16 @@ export function RegistrationForm({
         label="Contraseña de 6 dígitos"
         type="password"
         inputMode="numeric"
+        maxLength={PASSWORD_LENGTH}
         value={values.password}
         error={errors.password}
         autoComplete="new-password"
+        placeholder="6 números, ej.: 246810"
         onChange={(event) => {
-          onFieldChange("password", event.target.value);
+          onFieldChange(
+            "password",
+            digitsOnly(event.target.value, PASSWORD_LENGTH),
+          );
         }}
       />
       {feedback ? <StatusMessage tone="error">{feedback}</StatusMessage> : null}

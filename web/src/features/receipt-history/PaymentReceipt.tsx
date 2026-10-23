@@ -2,7 +2,11 @@ import { Link } from "react-router";
 import { ApiError } from "../../lib/apiClient";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { directionFor } from "./format";
-import { paymentsClient, type PaymentsClient, type ReceiptSession } from "./paymentsClient";
+import {
+  paymentsClient,
+  type PaymentsClient,
+  type ReceiptSession,
+} from "./paymentsClient";
 import { ReceiptView } from "./ReceiptView";
 import { usePaymentReceipt } from "./usePayments";
 import "./receipt-history.css";
@@ -25,7 +29,10 @@ export function PaymentReceipt({
   }
   if (receipt.status === "error") {
     return (
-      <ReceiptError error={receipt.error} onRetry={() => void receipt.refetch()} />
+      <ReceiptError
+        error={receipt.error}
+        onRetry={() => void receipt.refetch()}
+      />
     );
   }
 
@@ -45,7 +52,10 @@ function ReceiptError({
   error: Error;
   onRetry: () => void;
 }) {
-  if (error instanceof ApiError && (error.status === 400 || error.status === 404)) {
+  if (
+    error instanceof ApiError &&
+    (error.status === 400 || error.status === 404)
+  ) {
     return <StatusMessage tone="error">{NOT_FOUND_MESSAGE}</StatusMessage>;
   }
   if (error instanceof ApiError && error.status === 401) {

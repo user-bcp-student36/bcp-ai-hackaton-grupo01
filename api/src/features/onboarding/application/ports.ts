@@ -15,7 +15,12 @@ export interface PasswordHasher {
   verify(password: string, encodedHash: string): Promise<boolean>;
 }
 export interface UserRepository {
-  create(user: User, passwordHash: string, openingBalanceCents: number): User;
+  create(
+    user: User,
+    passwordHash: string,
+    openingBalanceCents: number,
+    fullName?: string,
+  ): User;
   findById(id: string): User | null;
   findByDocument(
     identity: DocumentIdentity,

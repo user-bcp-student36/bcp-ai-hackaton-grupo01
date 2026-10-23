@@ -40,14 +40,19 @@ function mapUser(row: z.infer<typeof userRow>): User {
 export class SqliteUsers implements UserRepository {
   constructor(private readonly database: DatabaseSync) {}
 
-  create(user: User, passwordHash: string, openingBalanceCents: number): User {
+  create(
+    user: User,
+    passwordHash: string,
+    openingBalanceCents: number,
+    fullName?: string,
+  ): User {
     try {
       inTransaction(this.database, () => {
         this.database
           .prepare(
             `INSERT INTO users
           (id, document_type, document_number, phone, email, password_hash, wallet_id,
-           kyc_status, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+           kyc_status, active, created_at, updated_at, full_name) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
           )
           .run(
             user.id,
@@ -60,6 +65,7 @@ export class SqliteUsers implements UserRepository {
             Number(user.active),
             user.createdAt,
             user.updatedAt,
+            fullName ?? null,
           );
         if (user.active && user.walletId) {
           this.database

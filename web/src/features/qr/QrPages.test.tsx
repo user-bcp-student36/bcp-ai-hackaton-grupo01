@@ -6,12 +6,18 @@ import type { UserView } from "@wallet/contracts/onboarding";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { MemoryRouter, useLocation } from "react-router";
-import { SessionProvider, useSession, type ActiveSession } from "../../lib/session";
+import {
+  SessionProvider,
+  useSession,
+  type ActiveSession,
+} from "../../lib/session";
 import { ReceiveQrPage } from "./ReceiveQrPage";
 import { ScanQrPage } from "./ScanQrPage";
 
 vi.mock("qrcode", () => ({
-  default: { toDataURL: vi.fn(() => Promise.resolve("data:image/png;base64,QR")) },
+  default: {
+    toDataURL: vi.fn(() => Promise.resolve("data:image/png;base64,QR")),
+  },
 }));
 
 afterEach(() => {
@@ -36,7 +42,11 @@ const user: UserView = {
   createdAt: TIMESTAMP,
   updatedAt: TIMESTAMP,
 };
-const session: ActiveSession = { token: "token-ana", expiresAt: FAR_FUTURE, user };
+const session: ActiveSession = {
+  token: "token-ana",
+  expiresAt: FAR_FUTURE,
+  user,
+};
 
 function jsonResponse(status: number, body: unknown) {
   return Promise.resolve(
@@ -52,7 +62,12 @@ function SignedIn({ children }: { children: React.ReactNode }) {
   return current ? (
     children
   ) : (
-    <button type="button" onClick={() => { signIn(session); }}>
+    <button
+      type="button"
+      onClick={() => {
+        signIn(session);
+      }}
+    >
       Entrar
     </button>
   );
@@ -86,7 +101,12 @@ async function renderSignedIn(
 test("a fixed-amount QR shows the image and the amount", async () => {
   const fetchMock = vi.fn(() =>
     jsonResponse(201, {
-      qr: { id: "q1", payload: "altoque-qr:q1", amountCents: 1500, expiresAt: FAR_FUTURE },
+      qr: {
+        id: "q1",
+        payload: "altoque-qr:q1",
+        amountCents: 1500,
+        expiresAt: FAR_FUTURE,
+      },
     }),
   );
   await renderSignedIn(<ReceiveQrPage />, fetchMock);
@@ -94,10 +114,13 @@ test("a fixed-amount QR shows the image and the amount", async () => {
   await userEvent.type(screen.getByLabelText(/Monto a cobrar/), "15");
   await userEvent.click(screen.getByRole("button", { name: "Generar QR" }));
 
-  expect(await screen.findByAltText("Código QR para cobrar")).toBeInTheDocument();
+  expect(
+    await screen.findByAltText("Código QR para cobrar"),
+  ).toBeInTheDocument();
   expect(screen.getByText("Monto: S/ 15.00")).toBeInTheDocument();
   const body = JSON.parse(
-    (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string,
+    (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1]
+      .body as string,
   ) as unknown;
   expect(body).toEqual({ amountCents: 1500 });
 });
@@ -107,21 +130,28 @@ test("an open-amount QR says the payer chooses", async () => {
     <ReceiveQrPage />,
     vi.fn(() =>
       jsonResponse(201, {
-        qr: { id: "q2", payload: "altoque-qr:q2", amountCents: null, expiresAt: FAR_FUTURE },
+        qr: {
+          id: "q2",
+          payload: "altoque-qr:q2",
+          amountCents: null,
+          expiresAt: FAR_FUTURE,
+        },
       }),
     ),
   );
 
   await userEvent.click(screen.getByRole("button", { name: "Generar QR" }));
 
-  expect(await screen.findByText(/el pagador elige cuánto/)).toBeInTheDocument();
+  expect(
+    await screen.findByText(/el pagador elige cuánto/),
+  ).toBeInTheDocument();
 });
 
 test("an invalid receive amount is rejected before calling the API", async () => {
   const fetchMock = vi.fn();
   await renderSignedIn(<ReceiveQrPage />, fetchMock);
 
-  await userEvent.type(screen.getByLabelText(/Monto a cobrar/), "abc");
+  await userEvent.type(screen.getByLabelText(/Monto a cobrar/), "0");
   await userEvent.click(screen.getByRole("button", { name: "Generar QR" }));
 
   expect(await screen.findByRole("alert")).toBeInTheDocument();
@@ -153,7 +183,9 @@ test("pasting a fixed-amount QR saves the receiver and opens the prefilled payme
   await renderSignedIn(<ScanQrPage />, fetchMock);
 
   await userEvent.type(screen.getByLabelText(/pega el texto/), "altoque-qr:q1");
-  await userEvent.click(screen.getByRole("button", { name: "Continuar al pago" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Continuar al pago" }),
+  );
 
   expect(
     await screen.findByText(`/pagos?to=${RECEIVER_WALLET}&amount=2050`),
@@ -185,30 +217,47 @@ test("pasting an open-amount QR opens the payment without an amount", async () =
   await renderSignedIn(<ScanQrPage />, fetchMock);
 
   await userEvent.type(screen.getByLabelText(/pega el texto/), "altoque-qr:q2");
-  await userEvent.click(screen.getByRole("button", { name: "Continuar al pago" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Continuar al pago" }),
+  );
 
-  expect(await screen.findByText(`/pagos?to=${RECEIVER_WALLET}`)).toBeInTheDocument();
+  expect(
+    await screen.findByText(`/pagos?to=${RECEIVER_WALLET}`),
+  ).toBeInTheDocument();
 });
 
 test("an expired QR shows a clear message and stays on the page", async () => {
   await renderSignedIn(
     <ScanQrPage />,
     vi.fn(() =>
-      jsonResponse(410, { error: { code: "QR_EXPIRED", message: "El código QR venció." } }),
+      jsonResponse(410, {
+        error: { code: "QR_EXPIRED", message: "El código QR venció." },
+      }),
     ),
   );
 
-  await userEvent.type(screen.getByLabelText(/pega el texto/), "altoque-qr:old");
-  await userEvent.click(screen.getByRole("button", { name: "Continuar al pago" }));
+  await userEvent.type(
+    screen.getByLabelText(/pega el texto/),
+    "altoque-qr:old",
+  );
+  await userEvent.click(
+    screen.getByRole("button", { name: "Continuar al pago" }),
+  );
 
-  expect(await screen.findByText("El código QR venció. Pide uno nuevo.")).toBeInTheDocument();
+  expect(
+    await screen.findByText("El código QR venció. Pide uno nuevo."),
+  ).toBeInTheDocument();
 });
 
 test("without camera support the user is told to paste the QR text", async () => {
   await renderSignedIn(<ScanQrPage />, vi.fn());
 
-  await userEvent.click(screen.getByRole("button", { name: "Escanear con la cámara" }));
+  await userEvent.click(
+    screen.getByRole("button", { name: "Escanear con la cámara" }),
+  );
 
-  expect(await screen.findByText(/Pega el texto del código QR/)).toBeInTheDocument();
+  expect(
+    await screen.findByText(/Pega el texto del código QR/),
+  ).toBeInTheDocument();
   expect(screen.getByLabelText(/pega el texto/)).toBeInTheDocument();
 });

@@ -1,4 +1,10 @@
 import { useState, type SyntheticEvent } from "react";
+import {
+  digitsOnly,
+  documentMaxLength,
+  documentNumberFilter,
+  PASSWORD_LENGTH,
+} from "../../lib/inputFilters";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
 import { loginInputSchema } from "@wallet/contracts/auth";
@@ -96,7 +102,10 @@ export function LoginPage() {
           label="Tipo de documento"
           value={values.documentType}
           onChange={(event) => {
-            setField("documentType", event.target.value === "CE" ? "CE" : "DNI");
+            setField(
+              "documentType",
+              event.target.value === "CE" ? "CE" : "DNI",
+            );
           }}
         >
           <option value="DNI">DNI</option>
@@ -108,8 +117,16 @@ export function LoginPage() {
           value={values.documentNumber}
           error={clientErrors.documentNumber}
           autoComplete="off"
+          placeholder={
+            values.documentType === "DNI" ? "Ej.: 72193412" : "Ej.: AB1234567"
+          }
+          maxLength={documentMaxLength(values.documentType)}
+          inputMode={values.documentType === "DNI" ? "numeric" : "text"}
           onChange={(event) => {
-            setField("documentNumber", event.target.value);
+            setField(
+              "documentNumber",
+              documentNumberFilter(values.documentType)(event.target.value),
+            );
           }}
         />
         <TextField
@@ -117,11 +134,16 @@ export function LoginPage() {
           label="Contraseña de 6 dígitos"
           type="password"
           inputMode="numeric"
+          maxLength={PASSWORD_LENGTH}
           value={values.password}
           error={clientErrors.password}
           autoComplete="current-password"
+          placeholder="6 números"
           onChange={(event) => {
-            setField("password", event.target.value);
+            setField(
+              "password",
+              digitsOnly(event.target.value, PASSWORD_LENGTH),
+            );
           }}
         />
         {login.isError ? (

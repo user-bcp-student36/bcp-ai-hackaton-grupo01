@@ -4,13 +4,16 @@ const FRAME_WIDTH = 320;
 const FRAME_HEIGHT = 240;
 const FRAME_QUALITY = 0.7;
 
-export type CameraState = "idle" | "starting" | "ready" | "denied" | "unsupported";
+export type CameraState =
+  "idle" | "starting" | "ready" | "denied" | "unsupported";
 
 export function useCamera(
   videoRef: RefObject<HTMLVideoElement | null>,
   isActive: boolean,
 ) {
-  const [opened, setOpened] = useState<"starting" | "ready" | "denied">("starting");
+  const [opened, setOpened] = useState<"starting" | "ready" | "denied">(
+    "starting",
+  );
   // jsdom and old browsers have no camera API.
   const isSupported = "mediaDevices" in navigator;
   const state: CameraState = !isActive

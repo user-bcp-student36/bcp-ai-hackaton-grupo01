@@ -14,7 +14,8 @@ const PEN = new Intl.NumberFormat("es-PE", {
   currency: "PEN",
 });
 const NO_WALLET_COPY: Record<UserView["kycStatus"], string> = {
-  activa: "Tu billetera todavía no está disponible. Vuelve a intentar en unos minutos.",
+  activa:
+    "Tu billetera todavía no está disponible. Vuelve a intentar en unos minutos.",
   pendiente:
     "Tu verificación está pendiente. Tu billetera se habilitará cuando se apruebe.",
   rechazada:

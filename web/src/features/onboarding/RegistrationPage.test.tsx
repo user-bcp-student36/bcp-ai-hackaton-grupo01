@@ -114,6 +114,7 @@ async function fillForm(user: UserEvent, input: FormInput) {
     screen.getByLabelText("Número de documento"),
     input.documentNumber,
   );
+  await user.type(screen.getByLabelText("Nombre completo"), "Ana Pérez");
   await user.type(screen.getByLabelText("Celular (Perú)"), input.phone);
   await user.type(screen.getByLabelText("Correo electrónico"), input.email);
   await user.type(
@@ -158,6 +159,7 @@ test("Registers a DNI with normalized data and signs the user in without asking 
   expect(sentBody(fetchMock)).toEqual({
     documentType: "DNI",
     documentNumber: "12345678",
+    fullName: "Ana Pérez",
     phone: "+51912345678",
     email: "ana@example.com",
     password: "012345",
@@ -222,6 +224,7 @@ test("Registers a CE with a leading-zero password and shows pending without a wa
   expect(sentBody(fetchMock)).toEqual({
     documentType: "CE",
     documentNumber: "AB1234567",
+    fullName: "Ana Pérez",
     phone: "+51912345678",
     email: "carlos@example.com",
     password: "000123",

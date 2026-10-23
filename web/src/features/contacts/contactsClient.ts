@@ -1,6 +1,10 @@
 import { errorResponseSchema } from "@wallet/contracts";
 import { z } from "zod";
-import { ApiError, DEFAULT_ERROR_MESSAGE, REQUEST_TIMEOUT_MS } from "../../lib/apiClient";
+import {
+  ApiError,
+  DEFAULT_ERROR_MESSAGE,
+  REQUEST_TIMEOUT_MS,
+} from "../../lib/apiClient";
 
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/api/v1";

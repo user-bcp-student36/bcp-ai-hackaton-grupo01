@@ -85,7 +85,10 @@ function stubApi(accounts: readonly Account[]) {
       );
       if (!account || body.password !== PASSWORD) {
         return json(
-          errorBody("INVALID_CREDENTIALS", "Documento o contraseña incorrectos."),
+          errorBody(
+            "INVALID_CREDENTIALS",
+            "Documento o contraseña incorrectos.",
+          ),
           401,
         );
       }
@@ -109,10 +112,7 @@ function stubApi(accounts: readonly Account[]) {
     );
     if (method === "GET" && path === "/api/v1/me") {
       if (!account) {
-        return json(
-          errorBody("UNAUTHENTICATED", "Sesión no válida."),
-          401,
-        );
+        return json(errorBody("UNAUTHENTICATED", "Sesión no válida."), 401);
       }
       return json(
         accountResponseSchema.parse({
@@ -124,10 +124,7 @@ function stubApi(accounts: readonly Account[]) {
     }
     if (method === "DELETE" && path === "/api/v1/sessions/current") {
       if (!account) {
-        return json(
-          errorBody("UNAUTHENTICATED", "Sesión no válida."),
-          401,
-        );
+        return json(errorBody("UNAUTHENTICATED", "Sesión no válida."), 401);
       }
       revoked.add(token);
       return Promise.resolve(new Response(null, { status: 204 }));
@@ -297,9 +294,7 @@ describe("Wallet view", () => {
     await login("12345678");
 
     expect(await screen.findByText(SESSION_EXPIRED_NOTICE)).toBeVisible();
-    expect(
-      screen.getByRole("heading", { name: "Ingresar" }),
-    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Ingresar" })).toBeVisible();
     expect(screen.queryByText(/S\/\s?150/)).not.toBeInTheDocument();
   });
 

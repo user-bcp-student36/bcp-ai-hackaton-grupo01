@@ -6,8 +6,7 @@ const INVALID_AMOUNT_MESSAGE =
 const NON_POSITIVE_AMOUNT_MESSAGE = "El monto debe ser mayor que cero.";
 
 export type AmountParseResult =
-  | { ok: true; cents: number }
-  | { ok: false; message: string };
+  { ok: true; cents: number } | { ok: false; message: string };
 
 export function parsePenAmountToCents(input: string): AmountParseResult {
   const text = input.trim();

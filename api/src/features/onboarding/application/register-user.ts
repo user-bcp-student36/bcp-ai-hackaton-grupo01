@@ -4,6 +4,7 @@ import type { KycVerifier, PasswordHasher, UserRepository } from "./ports.js";
 type Registration = DocumentIdentity & {
   phone: string;
   email: string;
+  fullName?: string;
   password: string;
 };
 type Dependencies = {
@@ -38,6 +39,11 @@ export function registerUser(
       createdAt: timestamp,
       updatedAt: timestamp,
     };
-    return deps.users.create(user, passwordHash, deps.openingBalanceCents);
+    return deps.users.create(
+      user,
+      passwordHash,
+      deps.openingBalanceCents,
+      input.fullName,
+    );
   };
 }

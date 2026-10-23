@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type SyntheticEvent,
+} from "react";
+import { PHONE_MAX_LENGTH, phoneFilter } from "../../lib/inputFilters";
 import { Link, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../lib/apiClient";
@@ -17,9 +24,11 @@ const LOOKUP_ERROR_MESSAGES: Partial<Record<string, string>> = {
   VALIDATION_ERROR: "Ingresa un número de celular válido.",
   RECIPIENT_NOT_FOUND: "No encontramos un destinatario activo con ese número.",
   SELF_CONTACT: "No puedes agregarte a ti mismo como contacto.",
-  RATE_LIMITED: "Hiciste demasiadas búsquedas. Intenta de nuevo en unos minutos.",
+  RATE_LIMITED:
+    "Hiciste demasiadas búsquedas. Intenta de nuevo en unos minutos.",
 };
-const GENERIC_ERROR_MESSAGE = "No se pudo completar la acción. Intenta de nuevo.";
+const GENERIC_ERROR_MESSAGE =
+  "No se pudo completar la acción. Intenta de nuevo.";
 
 function messageFor(error: unknown): string {
   if (error instanceof ApiError) {
@@ -41,7 +50,9 @@ export function ContactsPage({ client }: Props) {
   if (!session || !activeClient) {
     return (
       <PageShell title="Contactos">
-        <StatusMessage tone="info">Inicia sesión para ver tus contactos.</StatusMessage>
+        <StatusMessage tone="info">
+          Inicia sesión para ver tus contactos.
+        </StatusMessage>
         <Link to="/ingresar">Ingresar</Link>
       </PageShell>
     );
@@ -115,9 +126,11 @@ function ContactsView({ client }: { client: ContactsClient }) {
           label="Celular del destinatario"
           inputMode="tel"
           autoComplete="tel"
+          placeholder="Ej.: 987654321"
+          maxLength={PHONE_MAX_LENGTH}
           value={phone}
           onChange={(event) => {
-            setPhone(event.target.value);
+            setPhone(phoneFilter(event.target.value));
           }}
         />
         <button type="submit" disabled={isSearching}>
@@ -125,7 +138,9 @@ function ContactsView({ client }: { client: ContactsClient }) {
         </button>
       </form>
 
-      {searchError ? <StatusMessage tone="error">{searchError}</StatusMessage> : null}
+      {searchError ? (
+        <StatusMessage tone="error">{searchError}</StatusMessage>
+      ) : null}
 
       <ContactList
         contacts={contacts}

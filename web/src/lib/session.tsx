@@ -77,6 +77,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 }
 
+export function useHasSession(): boolean {
+  return useContext(SessionContext)?.session != null;
+}
+
 export function useSession(): SessionValue {
   const value = useContext(SessionContext);
   if (!value) {

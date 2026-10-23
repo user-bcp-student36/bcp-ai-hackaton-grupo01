@@ -14,6 +14,7 @@ type Dependencies = {
     documentNumber: string;
     phone: string;
     email: string;
+    fullName?: string;
     password: string;
   }) => Promise<User>;
   login: (input: LoginInput) => Promise<LoginResult>;
@@ -52,6 +53,7 @@ export function enterWithBiometrics(
         ...identity,
         phone: profile.phone,
         email: profile.email,
+        fullName: profile.fullName,
         password,
       });
     }

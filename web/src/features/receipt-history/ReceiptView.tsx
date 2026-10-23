@@ -1,4 +1,9 @@
-import { directionLabel, formatPaymentDate, formatPen, type PaymentDirection } from "./format";
+import {
+  directionLabel,
+  formatPaymentDate,
+  formatPen,
+  type PaymentDirection,
+} from "./format";
 import type { PaymentView } from "./paymentsClient";
 import "./receipt-history.css";
 

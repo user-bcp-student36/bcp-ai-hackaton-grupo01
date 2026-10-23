@@ -20,13 +20,14 @@ const recipientRow = z.object({
 const contactRow = z.object({
   id: z.string(),
   phone: z.string(),
+  full_name: z.string().nullable(),
   wallet_id: z.string(),
   created_at: z.string(),
 });
 
 const recipientSelect = `SELECT u.id AS user_id, u.phone, w.id AS wallet_id
   FROM users u JOIN wallets w ON w.user_id = u.id`;
-const contactSelect = `SELECT c.id, u.phone, w.id AS wallet_id, c.created_at
+const contactSelect = `SELECT c.id, u.phone, u.full_name, w.id AS wallet_id, c.created_at
   FROM contacts c
   JOIN users u ON u.id = c.contact_user_id
   JOIN wallets w ON w.user_id = u.id`;
@@ -36,7 +37,10 @@ function mapContact(row: unknown, fullNameOf: FullNameOf): Contact {
   return {
     id: parsed.id,
     phone: parsed.phone,
-    displayName: contactDisplayName(fullNameOf(parsed.phone), parsed.phone),
+    displayName: contactDisplayName(
+      parsed.full_name ?? fullNameOf(parsed.phone),
+      parsed.phone,
+    ),
     walletId: parsed.wallet_id,
     createdAt: parsed.created_at,
   };

@@ -53,7 +53,9 @@ function urlOf(input: RequestInfo | URL): string {
   return input instanceof URL ? input.href : input.url;
 }
 
-function stubFetch(handler: (url: string, init: RequestInit) => Promise<Response>) {
+function stubFetch(
+  handler: (url: string, init: RequestInit) => Promise<Response>,
+) {
   const fetchMock = vi.fn<typeof fetch>((input, init) =>
     handler(urlOf(input), init ?? {}),
   );
@@ -196,7 +198,7 @@ test("Rejects an invalid amount without sending anything", async () => {
   const user = userEvent.setup();
   renderPage();
 
-  await reviewPayment(user, "1,50");
+  await reviewPayment(user, ".");
 
   expect(
     screen.getByText(
@@ -242,9 +244,7 @@ test("Keeps a lost response as unknown and resolves it with the same key", async
     screen.queryByRole("button", { name: "Revisar pago" }),
   ).not.toBeInTheDocument();
 
-  await user.click(
-    screen.getByRole("button", { name: "Consultar resultado" }),
-  );
+  await user.click(screen.getByRole("button", { name: "Consultar resultado" }));
 
   expect(
     await screen.findByRole("heading", { name: "Pago realizado" }),
@@ -265,7 +265,12 @@ test("Clears the attempt after a business rejection so the next payment gets a n
     sequence(
       () =>
         json(
-          { error: { code: "INSUFFICIENT_FUNDS", message: "Saldo insuficiente." } },
+          {
+            error: {
+              code: "INSUFFICIENT_FUNDS",
+              message: "Saldo insuficiente.",
+            },
+          },
           409,
         ),
       () => json(paymentJson(), 201),
@@ -295,11 +300,19 @@ test("Clears the attempt after a business rejection so the next payment gets a n
 test("Retries a provider timeout automatically with the same key and succeeds", async () => {
   const timeout = () =>
     json(
-      { error: { code: "PROVIDER_TIMEOUT", message: "El proveedor no respondió a tiempo." } },
+      {
+        error: {
+          code: "PROVIDER_TIMEOUT",
+          message: "El proveedor no respondió a tiempo.",
+        },
+      },
       503,
     );
   const notFound = () =>
-    json({ error: { code: "PAYMENT_NOT_FOUND", message: "No encontrado." } }, 404);
+    json(
+      { error: { code: "PAYMENT_NOT_FOUND", message: "No encontrado." } },
+      404,
+    );
   const fetchMock = stubFetch(
     sequence(timeout, notFound, () => json(paymentJson(), 201)),
   );
@@ -320,7 +333,12 @@ test("Retries a provider timeout automatically with the same key and succeeds", 
 test("Stops after the retry limit and offers a manual check", async () => {
   const timeout = () =>
     json(
-      { error: { code: "PROVIDER_TIMEOUT", message: "El proveedor no respondió a tiempo." } },
+      {
+        error: {
+          code: "PROVIDER_TIMEOUT",
+          message: "El proveedor no respondió a tiempo.",
+        },
+      },
       503,
     );
   stubFetch(() => timeout());
@@ -341,7 +359,12 @@ test("Stops after the retry limit and offers a manual check", async () => {
 test("Shows a clear message when the provider declines and frees the form", async () => {
   stubFetch(() =>
     json(
-      { error: { code: "PAYMENT_DECLINED", message: "El proveedor rechazó el pago." } },
+      {
+        error: {
+          code: "PAYMENT_DECLINED",
+          message: "El proveedor rechazó el pago.",
+        },
+      },
       409,
     ),
   );
@@ -372,9 +395,7 @@ test("Restores an unresolved attempt for its own user only", async () => {
   expect(
     screen.queryByRole("heading", { name: "Resultado por confirmar" }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("button", { name: "Revisar pago" }),
-  ).toBeVisible();
+  expect(screen.getByRole("button", { name: "Revisar pago" })).toBeVisible();
   otherUser.unmount();
 
   renderPage(OWNER);

@@ -1,4 +1,5 @@
 import { useRef, useState, type SyntheticEvent } from "react";
+import { digitsOnly, DNI_LENGTH, PASSWORD_LENGTH } from "../../lib/inputFilters";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
 import { type BiometricProfileResponse } from "@wallet/contracts/biometric";
@@ -115,10 +116,11 @@ export function BiometricPage() {
             label="DNI"
             inputMode="numeric"
             autoComplete="off"
+            placeholder="Ej.: 72193412"
             value={documentNumber}
             error={fieldError}
             onChange={(event) => {
-              setDocumentNumber(event.target.value);
+              setDocumentNumber(digitsOnly(event.target.value, DNI_LENGTH));
             }}
           />
           {lookup.isError ? (
@@ -185,8 +187,10 @@ export function BiometricPage() {
           }
           value={password}
           error={fieldError}
+          maxLength={PASSWORD_LENGTH}
+          placeholder="6 números"
           onChange={(event) => {
-            setPassword(event.target.value);
+            setPassword(digitsOnly(event.target.value, PASSWORD_LENGTH));
           }}
         />
         {enter.isError ? (

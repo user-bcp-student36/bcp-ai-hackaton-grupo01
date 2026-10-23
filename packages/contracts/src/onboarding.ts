@@ -36,6 +36,7 @@ export const registrationInputSchema = z
     ...documentFields,
     phone: phoneSchema,
     email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+    fullName: z.string().trim().min(2).max(80).optional(),
     password: passwordSchema,
   })
   .refine(validDocument, documentError);
