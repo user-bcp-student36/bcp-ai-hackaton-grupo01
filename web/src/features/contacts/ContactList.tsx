@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { StatusMessage } from "../../ui/StatusMessage";
+import { Illustration } from "../../ui/Illustration";
 import type { ContactView } from "./contactsClient";
 
 export type ListState = "loading" | "ready" | "error";
@@ -23,7 +24,9 @@ export function ContactList({
   if (listState === "error") {
     return (
       <div>
-        <StatusMessage tone="error">No se pudieron cargar tus contactos.</StatusMessage>
+        <StatusMessage tone="error">
+          No se pudieron cargar tus contactos.
+        </StatusMessage>
         <button type="button" onClick={onRetry}>
           Reintentar
         </button>
@@ -31,7 +34,12 @@ export function ContactList({
     );
   }
   if (contacts.length === 0) {
-    return <p>Aún no tienes contactos guardados.</p>;
+    return (
+      <div className="empty-state">
+        <Illustration name="contacts" />
+        <p>Aún no tienes contactos guardados.</p>
+      </div>
+    );
   }
   return (
     <ul className="contact-list" aria-label="Mis contactos">

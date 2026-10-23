@@ -363,8 +363,41 @@ button:disabled {
 
 .hero {
   display: grid;
-  gap: var(--space-md);
+  gap: var(--space-lg);
+  align-items: center;
   margin-bottom: var(--space-lg);
+}
+
+.hero-text {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.hero-art {
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  justify-self: center;
+}
+
+@media (min-width: 52rem) {
+  .hero {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.illustration {
+  display: block;
+  width: min(100%, 10rem);
+  height: auto;
+  margin-inline: auto;
+}
+
+.empty-state {
+  display: grid;
+  gap: var(--space-md);
+  justify-items: center;
+  text-align: center;
 }
 
 .page-shell > main > .hero h1 {

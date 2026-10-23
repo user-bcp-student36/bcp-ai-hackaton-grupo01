@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { useSession, type ActiveSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
+import { Illustration } from "../../ui/Illustration";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { createContactsClient } from "../contacts/contactsClient";
 import { PaymentPage } from "./PaymentPage";
@@ -60,12 +61,15 @@ function PaymentWithContacts({ session }: { session: ActiveSession }) {
   if (saved.length === 0) {
     return (
       <PageShell title="Pagar a un contacto">
-        <StatusMessage tone="info">
-          Aún no tienes contactos guardados. Agrega uno para poder pagarle.
-        </StatusMessage>
-        <Link className="button-link" to="/contactos">
-          Ir a contactos
-        </Link>
+        <div className="empty-state">
+          <Illustration name="contacts" />
+          <StatusMessage tone="info">
+            Aún no tienes contactos guardados. Agrega uno para poder pagarle.
+          </StatusMessage>
+          <Link className="button-link" to="/contactos">
+            Ir a contactos
+          </Link>
+        </div>
       </PageShell>
     );
   }

@@ -5,6 +5,7 @@ import { QR_PAYLOAD_PREFIX } from "@wallet/contracts/qr";
 import { ApiError } from "../../lib/apiClient";
 import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
+import { Illustration } from "../../ui/Illustration";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { TextField } from "../../ui/TextField";
 import { createContactsClient } from "../contacts/contactsClient";
@@ -28,7 +29,9 @@ export function ScanQrPage() {
   if (!session) {
     return (
       <PageShell title="Pagar con QR">
-        <StatusMessage tone="info">Inicia sesión para pagar con QR.</StatusMessage>
+        <StatusMessage tone="info">
+          Inicia sesión para pagar con QR.
+        </StatusMessage>
         <Link className="button-link" to="/ingresar">
           Ingresar
         </Link>
@@ -85,12 +88,20 @@ function ScanQrForm({ token, userId }: { token: string; userId: string }) {
 
   return (
     <PageShell title="Pagar con QR">
+      <Illustration name="scan" />
       {isScanning && !cameraFailed ? (
         <div className="camera-frame is-rear">
-          <video ref={videoRef} muted playsInline aria-label="Cámara para leer el QR" />
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            aria-label="Cámara para leer el QR"
+          />
         </div>
       ) : null}
-      {cameraFailed ? <StatusMessage tone="info">{CAMERA_FALLBACK}</StatusMessage> : null}
+      {cameraFailed ? (
+        <StatusMessage tone="info">{CAMERA_FALLBACK}</StatusMessage>
+      ) : null}
       <button
         type="button"
         onClick={() => {
@@ -110,7 +121,10 @@ function ScanQrForm({ token, userId }: { token: string; userId: string }) {
             setPayload(event.target.value);
           }}
         />
-        <button type="submit" disabled={resolve.isPending || payload.trim() === ""}>
+        <button
+          type="submit"
+          disabled={resolve.isPending || payload.trim() === ""}
+        >
           {resolve.isPending ? "Leyendo…" : "Continuar al pago"}
         </button>
       </form>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router";
+import { useHasSession } from "../lib/session";
 import bcpLogo from "./bcp-logo.svg";
 
 export const DEMO_DISCLAIMER =
@@ -21,6 +22,9 @@ type Props = {
 };
 
 export function PageShell({ title, children }: Props) {
+  // Signed-out visitors only get Inicio: every other page needs a session.
+  const hasSession = useHasSession();
+  const links = hasSession ? NAV_LINKS : NAV_LINKS.slice(0, 1);
   return (
     <div className="page-frame">
       <header className="app-header">
@@ -30,7 +34,7 @@ export function PageShell({ title, children }: Props) {
             <span>Altoque</span>
           </Link>
           <nav className="app-nav" aria-label="Principal">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <NavLink key={link.to} to={link.to}>
                 {link.label}
               </NavLink>

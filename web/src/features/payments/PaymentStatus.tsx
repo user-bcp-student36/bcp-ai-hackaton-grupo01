@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Illustration } from "../../ui/Illustration";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { formatPenCents } from "./amount";
 import type { PaymentView } from "./payment-types";
@@ -53,7 +54,11 @@ export function PaymentSuccessPanel({
   onNewPayment: () => void;
 }) {
   return (
-    <section className="card" aria-labelledby="payment-success-title">
+    <section
+      className="card empty-state"
+      aria-labelledby="payment-success-title"
+    >
+      <Illustration name="success" />
       <h2 id="payment-success-title">Pago realizado</h2>
       <p className="status-success" role="status">
         {formatPenCents(payment.amountCents)} enviados a {recipientName}.

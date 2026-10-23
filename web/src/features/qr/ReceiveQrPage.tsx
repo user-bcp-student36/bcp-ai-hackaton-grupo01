@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { ApiError } from "../../lib/apiClient";
 import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
+import { Illustration } from "../../ui/Illustration";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { TextField } from "../../ui/TextField";
 import { formatPenCents, parsePenAmountToCents } from "../payments/amount";
@@ -30,7 +31,9 @@ export function ReceiveQrPage() {
   if (!session) {
     return (
       <PageShell title="Cobrar con QR">
-        <StatusMessage tone="info">Inicia sesión para cobrar con QR.</StatusMessage>
+        <StatusMessage tone="info">
+          Inicia sesión para cobrar con QR.
+        </StatusMessage>
         <Link className="button-link" to="/ingresar">
           Ingresar
         </Link>
@@ -77,6 +80,7 @@ function ReceiveQrForm({ token }: { token: string }) {
 
   return (
     <PageShell title="Cobrar con QR">
+      <Illustration name="receive" />
       <form onSubmit={handleSubmit} noValidate>
         <TextField
           id="qr-amount"
@@ -97,13 +101,20 @@ function ReceiveQrForm({ token }: { token: string }) {
       {failure ? <StatusMessage tone="error">{failure}</StatusMessage> : null}
       {generated ? (
         <section className="qr-card" aria-label="Tu código QR">
-          <img src={generated.image} alt="Código QR para cobrar" width={QR_IMAGE_SIZE_PX} />
+          <img
+            src={generated.image}
+            alt="Código QR para cobrar"
+            width={QR_IMAGE_SIZE_PX}
+          />
           <p>
             {generated.amountCents === null
               ? "Monto abierto: el pagador elige cuánto."
               : `Monto: ${formatPenCents(generated.amountCents)}`}
           </p>
-          <p>Vence a las {new Date(generated.expiresAt).toLocaleTimeString("es-PE")}.</p>
+          <p>
+            Vence a las{" "}
+            {new Date(generated.expiresAt).toLocaleTimeString("es-PE")}.
+          </p>
         </section>
       ) : null}
     </PageShell>
