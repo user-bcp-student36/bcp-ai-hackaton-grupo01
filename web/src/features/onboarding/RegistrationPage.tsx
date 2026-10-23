@@ -1,6 +1,14 @@
 import { useState, type SyntheticEvent } from "react";
-import { registrationInputSchema } from "@wallet/contracts/onboarding";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router";
+import {
+  registrationInputSchema,
+  type RegistrationInput,
+} from "@wallet/contracts/onboarding";
+import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
+import { StatusMessage } from "../../ui/StatusMessage";
+import { loginAccount } from "../auth/auth-api";
 import { RegistrationForm } from "./RegistrationForm";
 import { RegistrationResult } from "./RegistrationResult";
 import { useRegisterUser } from "./useRegisterUser";
@@ -23,12 +31,34 @@ export function RegistrationPage() {
   const [values, setValues] = useState<RegistrationFormValues>(INITIAL_VALUES);
   const [clientErrors, setClientErrors] = useState<FieldErrors>({});
   const register = useRegisterUser();
+  const { signIn } = useSession();
+  const navigate = useNavigate();
+  // The user just proved their credentials by registering, so sign in for them.
+  const autoLogin = useMutation({
+    mutationFn: loginAccount,
+    onSuccess: (session) => {
+      signIn({
+        token: session.accessToken,
+        expiresAt: session.expiresAt,
+        user: session.user,
+      });
+      void navigate("/billetera", { replace: true });
+    },
+  });
 
   function setField<K extends RegistrationField>(
     field: K,
     value: RegistrationFormValues[K],
   ) {
     setValues((current) => ({ ...current, [field]: value }));
+  }
+
+  function startAutoLogin(input: RegistrationInput) {
+    autoLogin.mutate({
+      documentType: input.documentType,
+      documentNumber: input.documentNumber,
+      password: input.password,
+    });
   }
 
   function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
@@ -40,7 +70,13 @@ export function RegistrationPage() {
       return;
     }
     setClientErrors({});
-    register.mutate(parsed.data);
+    register.mutate(parsed.data, {
+      onSuccess: (response) => {
+        if (resolveRegistrationOutcome(response.user).kind !== "unconfirmed") {
+          startAutoLogin(parsed.data);
+        }
+      },
+    });
   }
 
   const outcome = register.data
@@ -56,15 +92,26 @@ export function RegistrationPage() {
     feedback = UNCONFIRMED_FEEDBACK;
   }
 
+  const isSigningIn = autoLogin.isPending || autoLogin.isSuccess;
+
   return (
     <PageShell title="Crear cuenta">
-      {confirmed ? (
+      {confirmed && isSigningIn ? (
+        <StatusMessage tone="success">
+          Cuenta creada. Entrando a tu billetera…
+        </StatusMessage>
+      ) : confirmed ? (
         <RegistrationResult outcome={confirmed} />
       ) : (
         <>
           <p>
             Registra una identidad ficticia para la demo. La verificación de
             identidad es simulada.
+          </p>
+          <p>
+            <Link className="button-link button-secondary" to="/biometria">
+              Registrarme con biometría
+            </Link>
           </p>
           <RegistrationForm
             values={values}

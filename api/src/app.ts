@@ -24,6 +24,12 @@ import { getAccount } from "./features/auth/application/get-account.js";
 import { loginUser } from "./features/auth/application/login-user.js";
 import { resolveSession } from "./features/auth/application/resolve-session.js";
 import { Unauthenticated } from "./features/auth/domain/session.js";
+import { biometricRoutes } from "./features/biometric/adapters/http/routes.js";
+import {
+  enterWithBiometrics,
+  getBiometricProfile,
+} from "./features/biometric/application/biometric-access.js";
+import { registerUser } from "./features/onboarding/application/register-user.js";
 import { revokeSession } from "./features/auth/application/revoke-session.js";
 import { MAX_CONTACTS } from "@wallet/contracts/contacts";
 import { contactRoutes } from "./features/contacts/adapters/http/routes.js";
@@ -162,17 +168,18 @@ export async function buildApp(deps: {
   // Unknown documents are verified against this hash so both login failures take the same time.
   const dummyPasswordHash = await passwords.hash(randomBytes(32).toString("hex"));
   const resolve = resolveSession({ users, sessions, now: clock });
+  const login = loginUser({
+    users,
+    passwords,
+    sessions,
+    dummyPasswordHash,
+    now: clock,
+    newId: randomUUID,
+    newToken: () => randomBytes(32).toString("base64url"),
+    sessionTtlSeconds: deps.config.SESSION_TTL_SECONDS,
+  });
   await app.register(authRoutes, {
-    login: loginUser({
-      users,
-      passwords,
-      sessions,
-      dummyPasswordHash,
-      now: clock,
-      newId: randomUUID,
-      newToken: () => randomBytes(32).toString("base64url"),
-      sessionTtlSeconds: deps.config.SESSION_TTL_SECONDS,
-    }),
+    login,
     revoke: revokeSession({ sessions, now: clock }),
     resolve,
     account: getAccount({ users }),
@@ -185,6 +192,26 @@ export async function buildApp(deps: {
     documentSecret: randomBytes(32),
   });
   const resolveOwner = resolveSession({ users, sessions, now: clock });
+  await app.register(biometricRoutes, {
+    profile: getBiometricProfile({ users }),
+    enter: enterWithBiometrics({
+      users,
+      register: registerUser({
+        users,
+        passwords,
+        kyc: new LocalKyc(deps.config.DEMO_KYC_RESULT),
+        now: () => new Date().toISOString(),
+        newId: randomUUID,
+        openingBalanceCents: deps.config.DEMO_INITIAL_BALANCE_CENTS,
+      }),
+      login,
+    }),
+    throttle: new LoginThrottle({
+      maxAttempts: deps.config.AUTH_RATE_LIMIT_MAX,
+      windowSeconds: deps.config.AUTH_RATE_LIMIT_WINDOW_SECONDS,
+      now: () => Date.now(),
+    }),
+  });
   const directory = new SqliteRecipientDirectory(database);
   const contacts = new SqliteContacts(database);
   const payments = new SqlitePaymentQueries(database);

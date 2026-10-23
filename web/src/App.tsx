@@ -4,12 +4,21 @@ import { SampleFormPage } from "./features/sample/SampleFormPage";
 import { LoginPage } from "./features/auth/LoginPage";
 import { WalletPage } from "./features/auth/WalletPage";
 import { RegistrationPage } from "./features/onboarding/RegistrationPage";
+import { BiometricPage } from "./features/biometric/BiometricPage";
 import { ContactsPage } from "./features/contacts/ContactsPage";
-import { PaymentPage } from "./features/payments/PaymentPage";
-import { CURRENT_OWNER_ID } from "./features/payments/session";
+import { PaymentRoute } from "./features/payments/PaymentRoute";
 import { PaymentHistoryPage } from "./features/receipt-history/PaymentHistoryPage";
 import { PaymentReceiptPage } from "./features/receipt-history/PaymentReceiptPage";
+import { useReceiptSession } from "./features/receipt-history/useReceiptSession";
 import { SessionProvider } from "./lib/session";
+
+function HistoryRoute() {
+  return <PaymentHistoryPage session={useReceiptSession()} />;
+}
+
+function ReceiptRoute() {
+  return <PaymentReceiptPage session={useReceiptSession()} />;
+}
 
 export function App() {
   return (
@@ -19,14 +28,12 @@ export function App() {
         <Route path="/ejemplo/formulario" element={<SampleFormPage />} />
         <Route path="/registro" element={<RegistrationPage />} />
         <Route path="/ingresar" element={<LoginPage />} />
+        <Route path="/biometria" element={<BiometricPage />} />
         <Route path="/billetera" element={<WalletPage />} />
         <Route path="/contactos" element={<ContactsPage />} />
-        <Route
-          path="/pagos"
-          element={<PaymentPage ownerUserId={CURRENT_OWNER_ID} />}
-        />
-        <Route path="/movimientos" element={<PaymentHistoryPage />} />
-        <Route path="/movimientos/:paymentId" element={<PaymentReceiptPage />} />
+        <Route path="/pagos" element={<PaymentRoute />} />
+        <Route path="/movimientos" element={<HistoryRoute />} />
+        <Route path="/movimientos/:paymentId" element={<ReceiptRoute />} />
       </Routes>
     </SessionProvider>
   );

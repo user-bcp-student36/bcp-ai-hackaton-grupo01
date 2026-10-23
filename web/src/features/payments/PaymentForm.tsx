@@ -2,21 +2,24 @@ import type { SyntheticEvent } from "react";
 import { SelectField } from "../../ui/SelectField";
 import { TextField } from "../../ui/TextField";
 import { formatPenCents } from "./amount";
-import { DEMO_CONTACTS } from "./fake-contacts";
-import type { PaymentPayload } from "./payment-types";
+import type { PaymentPayload, SavedContact } from "./payment-types";
 
 export type PaymentDraft = { recipientWalletId: string; amountText: string };
 export type PaymentDraftErrors = Partial<Record<keyof PaymentDraft, string>>;
 export type PaymentReviewData = { payload: PaymentPayload; recipientName: string };
 
+const QUICK_AMOUNTS = ["10", "20", "50", "100"];
+
 export function PaymentForm({
   draft,
   errors,
+  contacts,
   onChange,
   onSubmit,
 }: {
   draft: PaymentDraft;
   errors: PaymentDraftErrors;
+  contacts: readonly SavedContact[];
   onChange: (field: keyof PaymentDraft, value: string) => void;
   onSubmit: (event: SyntheticEvent<HTMLFormElement>) => void;
 }) {
@@ -32,7 +35,7 @@ export function PaymentForm({
         }}
       >
         <option value="">Elige un contacto</option>
-        {DEMO_CONTACTS.map((contact) => (
+        {contacts.map((contact) => (
           <option key={contact.walletId} value={contact.walletId}>
             {contact.name}
           </option>
@@ -50,6 +53,20 @@ export function PaymentForm({
           onChange("amountText", event.target.value);
         }}
       />
+      <div className="amount-chips" role="group" aria-label="Montos rápidos">
+        {QUICK_AMOUNTS.map((amount) => (
+          <button
+            key={amount}
+            type="button"
+            className="button-secondary"
+            onClick={() => {
+              onChange("amountText", amount);
+            }}
+          >
+            S/ {amount}
+          </button>
+        ))}
+      </div>
       <div className="form-actions">
         <button type="submit">Revisar pago</button>
       </div>
@@ -77,7 +94,11 @@ export function PaymentReview({
         <button type="button" onClick={onConfirm}>
           Confirmar pago
         </button>
-        <button type="button" onClick={onBack}>
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={onBack}
+        >
           Volver
         </button>
       </div>

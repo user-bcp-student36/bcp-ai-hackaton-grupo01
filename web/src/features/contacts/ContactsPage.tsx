@@ -1,15 +1,14 @@
-import { useEffect, useRef, useState, type SyntheticEvent } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { Link, useNavigate } from "react-router";
 import { ApiError } from "../../lib/apiClient";
 import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
-import { StatusMessage, type StatusTone } from "../../ui/StatusMessage";
+import { StatusMessage } from "../../ui/StatusMessage";
 import { TextField } from "../../ui/TextField";
 import {
-  contactsClient,
+  createContactsClient,
   type ContactsClient,
   type ContactView,
-  type RecipientLookup,
 } from "./contactsClient";
 import { ContactList, type ListState } from "./ContactList";
 
@@ -28,18 +27,17 @@ function messageFor(error: unknown): string {
   return GENERIC_ERROR_MESSAGE;
 }
 
-function withContact(contacts: ContactView[], contact: ContactView): ContactView[] {
-  return contacts.some((saved) => saved.id === contact.id)
-    ? contacts
-    : [...contacts, contact];
-}
-
 type Props = { client?: ContactsClient };
 
-export function ContactsPage({ client = contactsClient }: Props) {
+export function ContactsPage({ client }: Props) {
   const { session } = useSession();
+  const token = session?.token;
+  const activeClient = useMemo(
+    () => client ?? (token ? createContactsClient(token) : undefined),
+    [client, token],
+  );
 
-  if (!session) {
+  if (!session || !activeClient) {
     return (
       <PageShell title="Contactos">
         <StatusMessage tone="info">Inicia sesión para ver tus contactos.</StatusMessage>
@@ -49,21 +47,19 @@ export function ContactsPage({ client = contactsClient }: Props) {
   }
 
   // Keyed by user so logout or an account switch discards every query and form state.
-  return <ContactsView key={session.user.id} client={client} />;
+  return <ContactsView key={session.user.id} client={activeClient} />;
 }
 
-function ContactsView({ client }: Required<Props>) {
+function ContactsView({ client }: { client: ContactsClient }) {
   const [phone, setPhone] = useState("");
-  const [lookup, setLookup] = useState<RecipientLookup | undefined>();
   const [searchError, setSearchError] = useState<string | undefined>();
   const [isSearching, setIsSearching] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<{ tone: StatusTone; text: string } | undefined>();
-  const [isSaving, setIsSaving] = useState(false);
   const [contacts, setContacts] = useState<ContactView[]>([]);
   const [listState, setListState] = useState<ListState>("loading");
   const [reloadKey, setReloadKey] = useState(0);
   const [selected, setSelected] = useState<ContactView | undefined>();
   const latestSearch = useRef(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let isCurrent = true;
@@ -90,31 +86,19 @@ function ContactsView({ client }: Required<Props>) {
   async function handleSearch(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const search = ++latestSearch.current;
-    setLookup(undefined);
-    setSaveStatus(undefined);
     setSearchError(undefined);
     setIsSearching(true);
     try {
       const found = await client.lookupRecipient(phone.trim());
-      if (search === latestSearch.current) setLookup(found);
+      // A found recipient goes straight to payment; saving makes it payable.
+      await client.addContact(found.walletId);
+      if (search === latestSearch.current) {
+        void navigate(`/pagos?to=${encodeURIComponent(found.walletId)}`);
+      }
     } catch (error) {
       if (search === latestSearch.current) setSearchError(messageFor(error));
     } finally {
       if (search === latestSearch.current) setIsSearching(false);
-    }
-  }
-
-  async function handleSave(recipient: RecipientLookup) {
-    setIsSaving(true);
-    setSaveStatus(undefined);
-    try {
-      const saved = await client.addContact(recipient.walletId);
-      setContacts((current) => withContact(current, saved));
-      setSaveStatus({ tone: "success", text: "Contacto guardado." });
-    } catch (error) {
-      setSaveStatus({ tone: "error", text: messageFor(error) });
-    } finally {
-      setIsSaving(false);
     }
   }
 
@@ -132,28 +116,11 @@ function ContactsView({ client }: Required<Props>) {
           }}
         />
         <button type="submit" disabled={isSearching}>
-          {isSearching ? "Buscando…" : "Buscar"}
+          {isSearching ? "Buscando…" : "Buscar y pagar"}
         </button>
       </form>
 
       {searchError ? <StatusMessage tone="error">{searchError}</StatusMessage> : null}
-
-      {lookup ? (
-        <section aria-label="Resultado de búsqueda">
-          <p>Destinatario encontrado: {lookup.phone}</p>
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={() => void handleSave(lookup)}
-          >
-            {isSaving ? "Guardando…" : "Guardar contacto"}
-          </button>
-        </section>
-      ) : null}
-
-      {saveStatus ? (
-        <StatusMessage tone={saveStatus.tone}>{saveStatus.text}</StatusMessage>
-      ) : null}
 
       <ContactList
         contacts={contacts}

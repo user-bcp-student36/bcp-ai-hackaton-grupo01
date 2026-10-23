@@ -32,12 +32,17 @@ export interface ContactsClient {
   listContacts(): Promise<ContactView[]>;
 }
 
-async function request(path: string, init?: RequestInit): Promise<unknown> {
+async function request(
+  path: string,
+  accessToken: string,
+  init?: RequestInit,
+): Promise<unknown> {
   const hasBody = init?.body !== undefined;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
       ...(hasBody ? { "Content-Type": "application/json" } : {}),
     },
   });
@@ -54,22 +59,25 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
   return body;
 }
 
-export const contactsClient: ContactsClient = {
-  async lookupRecipient(phone) {
-    const body = await request(
-      `/contacts/lookup?phone=${encodeURIComponent(phone)}`,
-    );
-    return recipientSchema.parse(body);
-  },
-  async addContact(walletId) {
-    const body = await request("/contacts", {
-      method: "POST",
-      body: JSON.stringify({ walletId }),
-    });
-    return addContactResponseSchema.parse(body).contact;
-  },
-  async listContacts() {
-    const body = await request("/contacts");
-    return listContactsResponseSchema.parse(body).contacts;
-  },
-};
+export function createContactsClient(accessToken: string): ContactsClient {
+  return {
+    async lookupRecipient(phone) {
+      const body = await request(
+        `/contacts/lookup?phone=${encodeURIComponent(phone)}`,
+        accessToken,
+      );
+      return recipientSchema.parse(body);
+    },
+    async addContact(walletId) {
+      const body = await request("/contacts", accessToken, {
+        method: "POST",
+        body: JSON.stringify({ walletId }),
+      });
+      return addContactResponseSchema.parse(body).contact;
+    },
+    async listContacts() {
+      const body = await request("/contacts", accessToken);
+      return listContactsResponseSchema.parse(body).contacts;
+    },
+  };
+}

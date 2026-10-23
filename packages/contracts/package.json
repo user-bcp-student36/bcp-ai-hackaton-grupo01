@@ -15,6 +15,10 @@
       "types": "./src/auth.ts",
       "import": "./dist/auth.js"
     },
+    "./biometric": {
+      "types": "./src/biometric.ts",
+      "import": "./dist/biometric.js"
+    },
     ".": {
       "types": "./src/common.ts",
       "import": "./dist/common.js"

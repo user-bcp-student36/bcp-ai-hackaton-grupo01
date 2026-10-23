@@ -23,3 +23,4 @@ export const paymentPayloadSchema = z.object({
 
 export type PaymentView = z.infer<typeof paymentViewSchema>;
 export type PaymentPayload = z.infer<typeof paymentPayloadSchema>;
+export type SavedContact = { walletId: string; name: string };

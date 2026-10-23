@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Navigate } from "react-router";
+import { Link, Navigate } from "react-router";
 import type { AccountResponse } from "@wallet/contracts/auth";
 import type { UserView } from "@wallet/contracts/onboarding";
 import { ApiError } from "../../lib/apiClient";
@@ -58,8 +58,15 @@ function AccountView({ session }: { session: ActiveSession }) {
           void account.refetch();
         }}
       />
-      <div className="form-actions">
-        <button type="button" onClick={() => void logout()}>
+      <div className="wallet-actions">
+        <Link className="button-link" to="/pagos">
+          Pagar a un contacto
+        </Link>
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={() => void logout()}
+        >
           Cerrar sesión
         </button>
       </div>
@@ -93,10 +100,13 @@ function AccountBody({ isPending, error, data, onRetry }: AccountBodyProps) {
   }
   if (data.wallet) {
     return (
-      <section className="card" aria-labelledby="wallet-balance-title">
+      <section
+        className="card balance-card"
+        aria-labelledby="wallet-balance-title"
+      >
         <h2 id="wallet-balance-title">Saldo disponible</h2>
         <p className="balance">{formatBalance(data.wallet.balanceCents)}</p>
-        <p>Fondos ficticios para la demo.</p>
+        <p className="balance-note">Fondos ficticios para la demo.</p>
       </section>
     );
   }

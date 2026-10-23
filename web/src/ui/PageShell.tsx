@@ -1,28 +1,49 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
+import bcpLogo from "./bcp-logo.svg";
 
 export const DEMO_DISCLAIMER =
   "Demo local: identidades y fondos ficticios. No es una billetera real.";
 
-export function PageShell({
-  title,
-  children,
-}: {
-  title: string;
+const NAV_LINKS = [
+  { to: "/billetera", label: "Saldo" },
+  { to: "/contactos", label: "Contactos" },
+  { to: "/pagos", label: "Pagos" },
+  { to: "/movimientos", label: "Historial" },
+] as const;
+
+type Props = {
+  title?: string;
   children: ReactNode;
-}) {
+};
+
+export function PageShell({ title, children }: Props) {
   return (
-    <div className="page-shell">
-      <header className="page-header">
-        <Link className="brand" to="/">
-          Wallet Grupo 1
-        </Link>
-        <p className="disclaimer">{DEMO_DISCLAIMER}</p>
+    <div className="page-frame">
+      <header className="app-header">
+        <div className="app-header-inner">
+          <Link className="brand" to="/">
+            <img className="brand-logo" src={bcpLogo} alt="BCP" />
+            <span>Altoque</span>
+          </Link>
+          <nav className="app-nav" aria-label="Principal">
+            {NAV_LINKS.map((link) => (
+              <NavLink key={link.to} to={link.to}>
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
       </header>
-      <main>
-        <h1>{title}</h1>
-        {children}
-      </main>
+      <div className="page-shell">
+        <main>
+          {title ? <h1>{title}</h1> : null}
+          {children}
+        </main>
+      </div>
+      <footer className="app-footer">
+        <p className="disclaimer">{DEMO_DISCLAIMER}</p>
+      </footer>
     </div>
   );
 }

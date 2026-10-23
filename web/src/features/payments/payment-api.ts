@@ -12,6 +12,8 @@ const UNKNOWN_STATUS_MIN = 500;
 const errorBodySchema = z.object({ error: z.object({ code: z.string() }) });
 
 const REJECTION_MESSAGES: Partial<Record<string, string>> = {
+  UNAUTHENTICATED: "Tu sesión venció. Ingresa de nuevo para pagar.",
+  ACCOUNT_INACTIVE: "Tu cuenta todavía no está activa para pagar.",
   VALIDATION_ERROR: "Revisa el monto y el destinatario.",
   RECIPIENT_NOT_FOUND: "El contacto ya no está disponible.",
   SELF_TRANSFER: "No puedes pagarte a ti mismo.",
@@ -38,11 +40,16 @@ type RequestInitLike = {
 async function send(
   path: string,
   init: RequestInitLike,
+  accessToken: string,
 ): Promise<RawResponse | undefined> {
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      headers: { Accept: "application/json", ...init.headers },
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        ...init.headers,
+      },
       signal: AbortSignal.timeout(PAYMENT_REQUEST_TIMEOUT_MS),
     });
     const body: unknown = await response.json().catch(() => undefined);
@@ -70,35 +77,45 @@ function settle(response: RawResponse | undefined): Settled {
   };
 }
 
-export async function submitPayment(attempt: PaymentAttempt): Promise<Settled> {
+export async function submitPayment(
+  attempt: PaymentAttempt,
+  accessToken: string,
+): Promise<Settled> {
   return settle(
-    await send("/payments", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": attempt.key,
+    await send(
+      "/payments",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": attempt.key,
+        },
+        body: JSON.stringify(attempt.payload),
       },
-      body: JSON.stringify(attempt.payload),
-    }),
+      accessToken,
+    ),
   );
 }
 
-async function lookupByKey(key: string): Promise<Settled> {
+async function lookupByKey(key: string, accessToken: string): Promise<Settled> {
   return settle(
-    await send(`/payments/by-key/${encodeURIComponent(key)}`, {
-      method: "GET",
-    }),
+    await send(
+      `/payments/by-key/${encodeURIComponent(key)}`,
+      { method: "GET" },
+      accessToken,
+    ),
   );
 }
 
 /** Resolves an unknown attempt with the same key; never creates a new key. */
 export async function resolvePaymentAttempt(
   attempt: PaymentAttempt,
+  accessToken: string,
 ): Promise<Settled> {
-  const lookup = await lookupByKey(attempt.key);
+  const lookup = await lookupByKey(attempt.key, accessToken);
   if (lookup.kind === "confirmed") return lookup;
   if (lookup.kind === "rejected" && lookup.code === PAYMENT_NOT_FOUND_CODE) {
-    return submitPayment(attempt);
+    return submitPayment(attempt, accessToken);
   }
   return { kind: "unknown" };
 }

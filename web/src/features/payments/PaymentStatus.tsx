@@ -1,6 +1,6 @@
+import { Link } from "react-router";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { formatPenCents } from "./amount";
-import { findContact } from "./fake-contacts";
 import type { PaymentView } from "./payment-types";
 
 export function PaymentPendingPanel({
@@ -45,13 +45,13 @@ export function PaymentPendingPanel({
 
 export function PaymentSuccessPanel({
   payment,
+  recipientName,
   onNewPayment,
 }: {
   payment: PaymentView;
+  recipientName: string;
   onNewPayment: () => void;
 }) {
-  const recipientName =
-    findContact(payment.destinationWalletId)?.name ?? "contacto guardado";
   return (
     <section className="card" aria-labelledby="payment-success-title">
       <h2 id="payment-success-title">Pago realizado</h2>
@@ -63,6 +63,9 @@ export function PaymentSuccessPanel({
         <button type="button" onClick={onNewPayment}>
           Nuevo pago
         </button>
+        <Link className="button-link button-secondary" to="/movimientos">
+          Ver historial
+        </Link>
       </div>
     </section>
   );

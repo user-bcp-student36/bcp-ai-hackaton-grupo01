@@ -85,6 +85,12 @@ function requestsOf(fetchMock: ReturnType<typeof stubFetch>) {
   }));
 }
 
+const TEST_CONTACTS = [
+  { walletId: ANA_WALLET, name: "Ana Quispe" },
+  { walletId: "wallet-demo-carlos", name: "Carlos Huamán" },
+];
+const ACCESS_TOKEN = "token-owner-a";
+
 function renderPage(ownerUserId: string = OWNER) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
@@ -92,7 +98,11 @@ function renderPage(ownerUserId: string = OWNER) {
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <PaymentPage ownerUserId={ownerUserId} />
+        <PaymentPage
+          ownerUserId={ownerUserId}
+          accessToken={ACCESS_TOKEN}
+          contacts={TEST_CONTACTS}
+        />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -107,6 +117,21 @@ async function reviewPayment(user: UserEvent, amount: string) {
 function confirmButton() {
   return screen.getByRole("button", { name: "Confirmar pago" });
 }
+
+test("Sends the signed-in user's bearer token with the payment", async () => {
+  const fetchMock = stubFetch(() => json(paymentJson(), 201));
+  const user = userEvent.setup();
+  renderPage();
+
+  await reviewPayment(user, "10");
+  await user.click(confirmButton());
+
+  await screen.findByRole("heading", { name: "Pago realizado" });
+  const [, init] = fetchMock.mock.calls[0] ?? [];
+  expect((init?.headers as Record<string, string>).Authorization).toBe(
+    `Bearer ${ACCESS_TOKEN}`,
+  );
+});
 
 test("Sends the confirmed amount in cents with one idempotency key", async () => {
   const fetchMock = stubFetch(() => json(paymentJson(), 201));
@@ -135,6 +160,31 @@ test("Sends the confirmed amount in cents with one idempotency key", async () =>
   });
   expect(request?.key).toMatch(/^[A-Za-z0-9_-]+$/);
   expect(sessionStorage.length).toBe(0);
+});
+
+test("Refreshes the cached wallet balance after a successful payment", async () => {
+  stubFetch(() => json(paymentJson(), 201));
+  const user = userEvent.setup();
+  const queryClient = new QueryClient();
+  const accountKey = ["account", OWNER];
+  queryClient.setQueryData(accountKey, { wallet: { balanceCents: 5000 } });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <PaymentPage
+          ownerUserId={OWNER}
+          accessToken={ACCESS_TOKEN}
+          contacts={TEST_CONTACTS}
+        />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  await reviewPayment(user, "10");
+  await user.click(confirmButton());
+
+  await screen.findByRole("heading", { name: "Pago realizado" });
+  expect(queryClient.getQueryState(accountKey)?.isInvalidated).toBe(true);
 });
 
 test("Rejects an invalid amount without sending anything", async () => {

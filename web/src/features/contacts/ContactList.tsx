@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { StatusMessage } from "../../ui/StatusMessage";
 import type { ContactView } from "./contactsClient";
 
@@ -33,19 +34,28 @@ export function ContactList({
     return <p>Aún no tienes contactos guardados.</p>;
   }
   return (
-    <ul aria-label="Mis contactos">
+    <ul className="contact-list" aria-label="Mis contactos">
       {contacts.map((contact) => (
-        <li key={contact.id}>
-          <span>{contact.phone}</span>{" "}
-          <button
-            type="button"
-            aria-pressed={contact.id === selectedId}
-            onClick={() => {
-              onSelect(contact);
-            }}
-          >
-            Seleccionar {contact.phone}
-          </button>
+        <li key={contact.id} className="contact-row">
+          <span className="contact-phone">{contact.phone}</span>
+          <span className="contact-actions">
+            <Link
+              className="button-link"
+              to={`/pagos?to=${encodeURIComponent(contact.walletId)}`}
+            >
+              Pagar a {contact.phone}
+            </Link>
+            <button
+              type="button"
+              className="button-secondary"
+              aria-pressed={contact.id === selectedId}
+              onClick={() => {
+                onSelect(contact);
+              }}
+            >
+              Seleccionar {contact.phone}
+            </button>
+          </span>
         </li>
       ))}
     </ul>

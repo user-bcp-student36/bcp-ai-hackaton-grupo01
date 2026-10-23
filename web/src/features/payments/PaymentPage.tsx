@@ -5,10 +5,10 @@ import {
   type SyntheticEvent,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { PageShell } from "../../ui/PageShell";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { parsePenAmountToCents } from "./amount";
-import { findContact } from "./fake-contacts";
 import {
   clearPaymentAttempt,
   loadPaymentAttempt,
@@ -21,7 +21,7 @@ import {
   submitPayment,
   type Settled,
 } from "./payment-api";
-import type { PaymentView } from "./payment-types";
+import type { PaymentView, SavedContact } from "./payment-types";
 import {
   PaymentForm,
   PaymentReview,
@@ -35,10 +35,30 @@ export const PAYMENTS_QUERY_KEY = ["payments"];
 
 const EMPTY_DRAFT: PaymentDraft = { recipientWalletId: "", amountText: "" };
 
-export function PaymentPage({ ownerUserId }: { ownerUserId: string }) {
+type Props = {
+  ownerUserId: string;
+  accessToken: string;
+  contacts: readonly SavedContact[];
+};
+
+// Preselect the recipient from a "Pagar" link, or when there is only one choice.
+function initialDraft(
+  contacts: readonly SavedContact[],
+  requestedWalletId: string | null,
+): PaymentDraft {
+  const requested = contacts.find((c) => c.walletId === requestedWalletId);
+  const preselected = requested ?? (contacts.length === 1 ? contacts[0] : undefined);
+  return { ...EMPTY_DRAFT, recipientWalletId: preselected?.walletId ?? "" };
+}
+
+export function PaymentPage({ ownerUserId, accessToken, contacts }: Props) {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const requestedWalletId = searchParams.get("to");
   const [attempt, setAttempt] = useState(() => loadPaymentAttempt(ownerUserId));
-  const [draft, setDraft] = useState<PaymentDraft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<PaymentDraft>(() =>
+    initialDraft(contacts, requestedWalletId),
+  );
   const [draftErrors, setDraftErrors] = useState<PaymentDraftErrors>({});
   const [review, setReview] = useState<PaymentReviewData>();
   const [busy, setBusy] = useState(false);
@@ -57,18 +77,23 @@ export function PaymentPage({ ownerUserId }: { ownerUserId: string }) {
     }
     setSuccess(result.payment);
     void queryClient.invalidateQueries({ queryKey: PAYMENTS_QUERY_KEY });
+    void queryClient.invalidateQueries({ queryKey: ["account", ownerUserId] });
+  }
+
+  function findContact(walletId: string): SavedContact | undefined {
+    return contacts.find((contact) => contact.walletId === walletId);
   }
 
   async function settleAttempt(
     current: PaymentAttempt,
-    run: (attempt: PaymentAttempt) => Promise<Settled>,
+    run: (attempt: PaymentAttempt, token: string) => Promise<Settled>,
   ) {
     if (inFlight.current) return;
     inFlight.current = true;
     setBusy(true);
     setFailure(undefined);
     try {
-      applyResult(await run(current));
+      applyResult(await run(current, accessToken));
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -118,7 +143,7 @@ export function PaymentPage({ ownerUserId }: { ownerUserId: string }) {
 
   function startNewPayment() {
     setSuccess(undefined);
-    setDraft(EMPTY_DRAFT);
+    setDraft(initialDraft(contacts, requestedWalletId));
     setDraftErrors({});
   }
 
@@ -129,7 +154,11 @@ export function PaymentPage({ ownerUserId }: { ownerUserId: string }) {
   let content: ReactNode;
   if (success) {
     content = (
-      <PaymentSuccessPanel payment={success} onNewPayment={startNewPayment} />
+      <PaymentSuccessPanel
+        payment={success}
+        recipientName={recipientNameOf(success.destinationWalletId)}
+        onNewPayment={startNewPayment}
+      />
     );
   } else if (attempt) {
     content = (
@@ -155,6 +184,7 @@ export function PaymentPage({ ownerUserId }: { ownerUserId: string }) {
       <PaymentForm
         draft={draft}
         errors={draftErrors}
+        contacts={contacts}
         onChange={changeDraft}
         onSubmit={handleReview}
       />

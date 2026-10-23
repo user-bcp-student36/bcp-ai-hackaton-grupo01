@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { UserView } from "@wallet/contracts/onboarding";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import { ApiError } from "../../lib/apiClient";
 import type { ContactsClient, ContactView } from "./contactsClient";
 import { SessionProvider, useSession, type ActiveSession } from "../../lib/session";
@@ -52,6 +52,11 @@ function SessionControls() {
   );
 }
 
+function LocationProbe() {
+  const location = useLocation();
+  return <p>{location.pathname + location.search}</p>;
+}
+
 function renderPage(client: ContactsClient, { signedIn = true } = {}) {
   vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
   const queryClient = new QueryClient();
@@ -60,6 +65,7 @@ function renderPage(client: ContactsClient, { signedIn = true } = {}) {
       <SessionProvider>
         <MemoryRouter>
           <SessionControls />
+          <LocationProbe />
           <ContactsPage client={client} />
         </MemoryRouter>
       </SessionProvider>
@@ -91,10 +97,10 @@ function fakeClient(overrides: Partial<ContactsClient> = {}): ContactsClient {
 
 async function searchPhone(phone: string) {
   await userEvent.type(screen.getByLabelText("Celular del destinatario"), phone);
-  await userEvent.click(screen.getByRole("button", { name: "Buscar" }));
+  await userEvent.click(screen.getByRole("button", { name: "Buscar y pagar" }));
 }
 
-test("lookup finds a recipient and saves it as a contact", async () => {
+test("a found recipient is saved and opens the payment form", async () => {
   const addContact = vi.fn(() => Promise.resolve(SAVED));
   const client = fakeClient({
     lookupRecipient: vi.fn(() =>
@@ -105,11 +111,24 @@ test("lookup finds a recipient and saves it as a contact", async () => {
   await renderPage(client);
 
   await searchPhone("999999999");
-  expect(await screen.findByText("Destinatario encontrado: +51999999999")).toBeVisible();
-  await userEvent.click(screen.getByRole("button", { name: "Guardar contacto" }));
 
+  expect(await screen.findByText("/pagos?to=w1")).toBeVisible();
   expect(addContact).toHaveBeenCalledWith("w1");
-  expect(await screen.findByText("Contacto guardado.")).toBeVisible();
+});
+
+test("a failed save keeps the user on contacts with feedback", async () => {
+  const client = fakeClient({
+    lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
+    addContact: () => Promise.reject(new TypeError("Failed to fetch")),
+  });
+  await renderPage(client);
+
+  await searchPhone("999999999");
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "No se pudo completar la acción. Intenta de nuevo.",
+  );
+  expect(screen.getByText("/")).toBeVisible();
 });
 
 test("a missing recipient shows feedback and selects nobody", async () => {
@@ -120,7 +139,6 @@ test("a missing recipient shows feedback and selects nobody", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "No encontramos un destinatario activo con ese número.",
   );
-  expect(screen.queryByRole("button", { name: "Guardar contacto" })).not.toBeInTheDocument();
   expect(screen.queryByText(/Destinatario seleccionado/)).not.toBeInTheDocument();
 });
 
@@ -166,23 +184,6 @@ test("selecting a saved contact makes it the recipient", async () => {
   expect(screen.getByText(`Destinatario seleccionado: ${SAVED.phone}`)).toBeVisible();
 });
 
-test("saving an existing contact keeps a single list entry", async () => {
-  const client = fakeClient({
-    listContacts: () => Promise.resolve([SAVED]),
-    lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
-  });
-  await renderPage(client);
-  await screen.findByRole("list", { name: "Mis contactos" });
-
-  await searchPhone("999999999");
-  await userEvent.click(await screen.findByRole("button", { name: "Guardar contacto" }));
-
-  await waitFor(() => {
-    expect(screen.getByText("Contacto guardado.")).toBeVisible();
-  });
-  expect(screen.getAllByRole("listitem")).toHaveLength(1);
-});
-
 test("contacts require login and send no request while signed out", async () => {
   const listContacts = vi.fn(() => Promise.resolve([]));
   await renderPage(fakeClient({ listContacts }), { signedIn: false });
@@ -196,12 +197,9 @@ test("logout clears the contact query state", async () => {
   await renderPage(
     fakeClient({
       listContacts: () => Promise.resolve([SAVED]),
-      lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
     }),
   );
   await userEvent.click(await screen.findByRole("button", { name: `Seleccionar ${SAVED.phone}` }));
-  await searchPhone("999999999");
-  await screen.findByText(`Destinatario encontrado: ${SAVED.phone}`);
 
   await userEvent.click(screen.getByRole("button", { name: "Salir" }));
 
@@ -226,18 +224,11 @@ test("switching accounts discards the previous account contacts and selection", 
   expect(listContacts).toHaveBeenCalledTimes(2);
 });
 
-test("a duplicated add after an account switch lists the contact once", async () => {
-  const client = fakeClient({
-    listContacts: () => Promise.resolve([]),
-    lookupRecipient: () => Promise.resolve({ phone: SAVED.phone, walletId: SAVED.walletId }),
-  });
-  await renderPage(client);
-  await userEvent.click(screen.getByRole("button", { name: "Entrar como Beto" }));
-  await screen.findByText("Aún no tienes contactos guardados.");
+test("a Pagar link on each saved contact opens its payment form", async () => {
+  await renderPage(fakeClient({ listContacts: () => Promise.resolve([SAVED]) }));
 
-  await searchPhone("999999999");
-  await userEvent.click(await screen.findByRole("button", { name: "Guardar contacto" }));
-  await userEvent.click(await screen.findByRole("button", { name: "Guardar contacto" }));
-
-  expect(await screen.findAllByRole("listitem")).toHaveLength(1);
+  expect(await screen.findByRole("link", { name: `Pagar a ${SAVED.phone}` })).toHaveAttribute(
+    "href",
+    "/pagos?to=w1",
+  );
 });

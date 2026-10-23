@@ -133,7 +133,12 @@ export function LoginPage() {
           <button type="submit" disabled={login.isPending}>
             {login.isPending ? "Ingresando…" : "Ingresar"}
           </button>
-          <Link to="/registro">Crear cuenta</Link>
+          <Link className="button-link button-secondary" to="/registro">
+            Crear cuenta
+          </Link>
+          <Link className="button-link button-secondary" to="/biometria">
+            Ingresar con biometría
+          </Link>
         </div>
       </form>
     </PageShell>

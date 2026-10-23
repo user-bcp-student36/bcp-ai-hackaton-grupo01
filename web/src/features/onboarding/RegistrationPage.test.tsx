@@ -4,12 +4,14 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import {
   registrationResponseSchema,
   type UserView,
 } from "@wallet/contracts/onboarding";
+import { sessionResponseSchema } from "@wallet/contracts/auth";
 import { ApiError } from "../../lib/apiClient";
+import { SessionProvider } from "../../lib/session";
 import { RegistrationPage } from "./RegistrationPage";
 import { resolveRegistrationOutcome } from "./registration-outcome";
 import {
@@ -91,9 +93,14 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <RegistrationPage />
-      </MemoryRouter>
+      <SessionProvider>
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<RegistrationPage />} />
+            <Route path="/billetera" element={<h1>Pantalla de billetera</h1>} />
+          </Routes>
+        </MemoryRouter>
+      </SessionProvider>
     </QueryClientProvider>,
   );
 }
@@ -119,10 +126,50 @@ async function submit(user: UserEvent) {
   await user.click(screen.getByRole("button", { name: "Crear cuenta" }));
 }
 
-test("Registers a DNI with normalized data and shows the active result", async () => {
-  const fetchMock = stubFetch(() =>
-    jsonResponse(createdBody(registeredUser()), 201),
+function sessionBody(user: UserView): unknown {
+  return sessionResponseSchema.parse({
+    accessToken: "token-1",
+    tokenType: "Bearer",
+    expiresAt: "2026-10-23T18:00:00.000Z",
+    user,
+  });
+}
+
+test("Registers a DNI with normalized data and signs the user in without asking to log in", async () => {
+  const fetchMock = vi.fn<typeof fetch>((input) =>
+    typeof input === "string" && input.endsWith("/sessions")
+      ? jsonResponse(sessionBody(registeredUser()), 200)
+      : jsonResponse(createdBody(registeredUser()), 201),
   );
+  vi.stubGlobal("fetch", fetchMock);
+  const user = userEvent.setup();
+  renderPage();
+
+  await fillForm(user, VALID_DNI);
+  await submit(user);
+
+  expect(
+    await screen.findByRole("heading", { name: "Pantalla de billetera" }),
+  ).toBeVisible();
+  expect(fetchMock).toHaveBeenCalledWith(
+    expect.stringMatching(/\/users$/),
+    expect.objectContaining({ method: "POST" }),
+  );
+  expect(sentBody(fetchMock)).toEqual({
+    documentType: "DNI",
+    documentNumber: "12345678",
+    phone: "+51912345678",
+    email: "ana@example.com",
+    password: "012345",
+  });
+  expect(fetchMock).toHaveBeenCalledWith(
+    expect.stringMatching(/\/sessions$/),
+    expect.objectContaining({ method: "POST" }),
+  );
+});
+
+test("Falls back to the active result with a login link when the automatic sign-in fails", async () => {
+  stubFetch(() => jsonResponse(createdBody(registeredUser()), 201));
   const user = userEvent.setup();
   renderPage();
 
@@ -135,17 +182,6 @@ test("Registers a DNI with normalized data and shows the active result", async (
   expect(
     screen.getByRole("link", { name: "Ingresar para ver mi billetera" }),
   ).toHaveAttribute("href", "/ingresar");
-  expect(fetchMock).toHaveBeenCalledWith(
-    expect.stringMatching(/\/users$/),
-    expect.objectContaining({ method: "POST" }),
-  );
-  expect(sentBody(fetchMock)).toEqual({
-    documentType: "DNI",
-    documentNumber: "12345678",
-    phone: "+51912345678",
-    email: "ana@example.com",
-    password: "012345",
-  });
 });
 
 test("Registers a CE with a leading-zero password and shows pending without a wallet", async () => {
@@ -350,7 +386,7 @@ test("A technical 500 with null walletId never shows success and can be retried"
   expect(
     await screen.findByRole("heading", { name: "Cuenta activa" }),
   ).toBeVisible();
-  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(fetchMock).toHaveBeenCalledTimes(3);
 });
 
 test("A network failure shows a technical error and no result", async () => {
@@ -416,7 +452,7 @@ test("The button shows progress and is disabled while the request is in flight",
 
   resolveRequest(Response.json(createdBody(registeredUser()), { status: 201 }));
   expect(
-    await screen.findByRole("heading", { name: "Cuenta activa" }),
+    await screen.findByText("Cuenta creada. Entrando a tu billetera…"),
   ).toBeVisible();
 });
 
@@ -451,7 +487,7 @@ test("Labels every control, shows the demo disclaimer and submits from the keybo
   expect(
     await screen.findByRole("heading", { name: "Cuenta activa" }),
   ).toBeVisible();
-  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(fetchMock).toHaveBeenCalledTimes(2);
 });
 
 describe("resolveRegistrationOutcome", () => {
