@@ -8,9 +8,9 @@
 
 ## 2. Expose registration and deterministic KYC routes
 <!-- issue: area=backend size=M priority=p0 agent=auto depends=scaffold:2,1 files=api/src/features/onboarding/adapters/http/,api/src/features/onboarding/adapters/kyc/,api/src/app.ts -->
-- [ ] 2.1 Implement local KYC port and POST /kyc/verification and /users under /api/v1; verify no supplied KYC/balance can override server configuration.
-- [ ] 2.2 Wire composition root, safe errors, request throttling and response schemas; verify 201 business outcomes versus 500/503 rollback errors with walletId=null.
-- [ ] 2.3 Test both routes using inject: DNI/CE, all three KYC results, extra fields, malformed input, duplicate conflict, mocked technical failure and no secret logging.
+- [x] 2.1 Implement local KYC port and POST /kyc/verification and /users under /api/v1; verify no supplied KYC/balance can override server configuration.
+- [x] 2.2 Wire composition root, safe errors, request throttling and response schemas; verify 201 business outcomes versus 500/503 rollback errors with walletId=null.
+- [x] 2.3 Test both routes using inject: DNI/CE, all three KYC results, extra fields, malformed input, duplicate conflict, mocked technical failure and no secret logging.
 
 ## 3. Build registration and KYC status screens
 <!-- issue: area=frontend size=M priority=p0 depends=scaffold:2,1 files=web/src/features/onboarding/,web/src/App.tsx -->

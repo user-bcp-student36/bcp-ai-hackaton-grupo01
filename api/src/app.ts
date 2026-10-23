@@ -14,8 +14,13 @@ import {
   validatorCompiler,
 } from "fastify-type-provider-zod";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
+import { onboardingRoutes } from "./features/onboarding/adapters/http/routes.js";
+import { LocalKyc } from "./features/onboarding/adapters/kyc/local-kyc.js";
+import { ScryptPasswords } from "./features/onboarding/adapters/persistence/scrypt-passwords.js";
+import { SqliteUsers } from "./features/onboarding/adapters/persistence/sqlite-users.js";
 import type { Config } from "./shared/config.js";
 import { migrationsDirectory, openDatabase } from "./shared/database.js";
 const safeError = (code: string, message: string): ErrorResponse => ({
@@ -42,7 +47,8 @@ export async function buildApp(deps: {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   await app.register(cors, { origin: deps.config.WEB_ORIGIN });
-  if (deps.webDirectory) await app.register(fastifyStatic, { root: deps.webDirectory });
+  if (deps.webDirectory)
+    await app.register(fastifyStatic, { root: deps.webDirectory });
   app.setErrorHandler((error, request, reply) => {
     if (hasZodFastifySchemaValidationErrors(error)) {
       const issues = z
@@ -113,5 +119,17 @@ export async function buildApp(deps: {
       return { status: "ok", simulated: true } as const;
     },
   );
+  await app.register(onboardingRoutes, {
+    users: new SqliteUsers(database),
+    passwords: new ScryptPasswords(),
+    kyc: new LocalKyc(deps.config.DEMO_KYC_RESULT),
+    now: () => new Date().toISOString(),
+    newId: randomUUID,
+    openingBalanceCents: deps.config.DEMO_INITIAL_BALANCE_CENTS,
+    rateLimit: {
+      max: deps.config.AUTH_RATE_LIMIT_MAX,
+      windowMs: deps.config.AUTH_RATE_LIMIT_WINDOW_SECONDS * 1000,
+    },
+  });
   return app;
 }
