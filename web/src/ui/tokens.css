@@ -412,9 +412,9 @@ button:disabled {
   gap: 0.5rem;
   margin-top: 1.5rem;
   padding: 1.25rem;
-  border: 1px solid var(--color-border, #d9dde3);
-  border-radius: 12px;
-  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-surface);
   text-align: center;
 }
 
@@ -546,6 +546,25 @@ button {
 @media (max-width: 30rem) {
   .page-shell {
     padding: var(--space-lg) var(--space-sm);
+  }
+
+  .receipt-details,
+  .profile-data {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .receipt-details dd,
+  .profile-data dd {
+    margin-bottom: var(--space-sm);
+  }
+
+  .contact-actions {
+    flex: 1 1 100%;
+  }
+
+  .history-link {
+    width: 100%;
   }
 
   .app-header-inner {

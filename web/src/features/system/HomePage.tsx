@@ -1,10 +1,12 @@
 import { Link } from "react-router";
+import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
 import { StatusMessage } from "../../ui/StatusMessage";
 import { useHealth } from "./useHealth";
 
 export function HomePage() {
   const health = useHealth();
+  const { session } = useSession();
 
   return (
     <PageShell>
@@ -14,14 +16,31 @@ export function HomePage() {
           Crea tu cuenta, verifica tu identidad y paga en pocos pasos. Todo
           con datos ficticios.
         </p>
-        <div className="form-actions">
-          <Link className="button-link" to="/registro">
-            Crear cuenta
-          </Link>
-          <Link className="button-link button-secondary" to="/ingresar">
-            Ingresar
-          </Link>
-        </div>
+        {session ? (
+          <div className="form-actions">
+            <Link className="button-link" to="/pagos">
+              Pagar
+            </Link>
+            <Link className="button-link button-secondary" to="/pagar-qr">
+              Pagar con QR
+            </Link>
+            <Link className="button-link button-secondary" to="/contactos">
+              Mis contactos
+            </Link>
+            <Link className="button-link button-secondary" to="/billetera">
+              Mi billetera
+            </Link>
+          </div>
+        ) : (
+          <div className="form-actions">
+            <Link className="button-link" to="/registro">
+              Crear cuenta
+            </Link>
+            <Link className="button-link button-secondary" to="/ingresar">
+              Ingresar
+            </Link>
+          </div>
+        )}
       </section>
       {health.isPending ? (
         <StatusMessage tone="info">Comprobando el servicio…</StatusMessage>
