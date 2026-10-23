@@ -58,7 +58,6 @@ test("a seeded document gets its preloaded profile", async () => {
 test("the first biometric entry creates the account with the preloaded data", async () => {
   const response = await enter({
     documentNumber: DEMO_DNI,
-    password: PASSWORD,
     faceImage: FACE_IMAGE,
   });
 
@@ -71,7 +70,7 @@ test("the first biometric entry creates the account with the preloaded data", as
 });
 
 test("a later biometric entry needs only the face, no password", async () => {
-  await enter({ documentNumber: DEMO_DNI, password: PASSWORD, faceImage: FACE_IMAGE });
+  await enter({ documentNumber: DEMO_DNI, faceImage: FACE_IMAGE });
 
   const response = await enter({
     documentNumber: DEMO_DNI,
@@ -82,37 +81,19 @@ test("a later biometric entry needs only the face, no password", async () => {
   expect(biometricSessionResponseSchema.parse(response.json()).created).toBe(false);
 });
 
-test("the first biometric entry without a password is a validation error", async () => {
+test("a password in the request is rejected", async () => {
   const response = await enter({
     documentNumber: DEMO_DNI,
+    password: PASSWORD,
     faceImage: FACE_IMAGE,
   });
 
   expect(response.statusCode).toBe(400);
-  expect(response.json()).toMatchObject({ error: { code: "VALIDATION_ERROR" } });
-});
-
-test("a malformed password is a validation error", async () => {
-  const response = await enter({
-    documentNumber: DEMO_DNI,
-    password: "000000",
-    faceImage: FACE_IMAGE,
-  });
-  expect(response.statusCode).toBe(201);
-
-  const bad = await enter({
-    documentNumber: "45871236",
-    password: "12",
-    faceImage: FACE_IMAGE,
-  });
-
-  expect(bad.statusCode).toBe(400);
 });
 
 test("a document outside the seeded list is not enabled", async () => {
   const response = await enter({
     documentNumber: "11111111",
-    password: PASSWORD,
     faceImage: FACE_IMAGE,
   });
 
@@ -123,7 +104,6 @@ test("a document outside the seeded list is not enabled", async () => {
 test("a missing or malformed face image is a validation error", async () => {
   const response = await enter({
     documentNumber: DEMO_DNI,
-    password: PASSWORD,
     faceImage: "not-an-image",
   });
 

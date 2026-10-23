@@ -1,9 +1,8 @@
 import { useRef, useState, type SyntheticEvent } from "react";
-import { digitsOnly, DNI_LENGTH, PASSWORD_LENGTH } from "../../lib/inputFilters";
+import { digitsOnly, DNI_LENGTH } from "../../lib/inputFilters";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router";
 import { type BiometricProfileResponse } from "@wallet/contracts/biometric";
-import { passwordSchema } from "@wallet/contracts/onboarding";
 import { ApiError } from "../../lib/apiClient";
 import { useSession } from "../../lib/session";
 import { PageShell } from "../../ui/PageShell";
@@ -14,10 +13,8 @@ import { enterWithBiometrics, fetchBiometricProfile } from "./biometric-api";
 import { useCamera } from "./useCamera";
 
 const DNI_MESSAGE = "Ingresa un DNI de 8 dígitos.";
-const PASSWORD_MESSAGE = "La contraseña debe tener exactamente 6 dígitos.";
 const NOT_ENABLED_MESSAGE =
   "Este DNI no tiene acceso biométrico habilitado en la demo.";
-const CREDENTIALS_MESSAGE = "La contraseña es incorrecta.";
 const RATE_LIMITED_MESSAGE = "Demasiados intentos. Espera unos minutos.";
 const CONNECTION_MESSAGE = "No se pudo conectar con el servicio local.";
 const CAMERA_MESSAGES = {
@@ -31,14 +28,12 @@ const CAMERA_MESSAGES = {
 function describeError(error: Error): string {
   if (!(error instanceof ApiError)) return CONNECTION_MESSAGE;
   if (error.code === "BIOMETRIC_NOT_ENABLED") return NOT_ENABLED_MESSAGE;
-  if (error.code === "INVALID_CREDENTIALS") return CREDENTIALS_MESSAGE;
   if (error.code === "RATE_LIMITED") return RATE_LIMITED_MESSAGE;
   return error.message;
 }
 
 export function BiometricPage() {
   const [documentNumber, setDocumentNumber] = useState("");
-  const [password, setPassword] = useState("");
   const [profile, setProfile] = useState<BiometricProfileResponse>();
   const [fieldError, setFieldError] = useState<string>();
   const { signIn } = useSession();
@@ -60,9 +55,6 @@ export function BiometricPage() {
       });
       void navigate("/billetera", { replace: true });
     },
-    onError: () => {
-      setPassword("");
-    },
   });
 
   function handleLookup(event: SyntheticEvent<HTMLFormElement>) {
@@ -80,26 +72,17 @@ export function BiometricPage() {
   function handleEnter(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!profile || enter.isPending) return;
-    if (!profile.hasAccount && !passwordSchema.safeParse(password).success) {
-      setFieldError(PASSWORD_MESSAGE);
-      return;
-    }
     const faceImage = camera.captureFrame();
     if (!faceImage) {
       setFieldError(CAMERA_MESSAGES[camera.state]);
       return;
     }
     setFieldError(undefined);
-    enter.mutate({
-      documentNumber: profile.documentNumber,
-      ...(profile.hasAccount ? {} : { password }),
-      faceImage,
-    });
+    enter.mutate({ documentNumber: profile.documentNumber, faceImage });
   }
 
   function reset() {
     setProfile(undefined);
-    setPassword("");
     setFieldError(undefined);
     lookup.reset();
     enter.reset();
@@ -158,7 +141,7 @@ export function BiometricPage() {
         <p>
           {profile.hasAccount
             ? "Ya tienes cuenta: verifica tu rostro para ingresar."
-            : "Verifica tu rostro y crea tu contraseña para abrir tu cuenta."}
+            : "Verifica tu rostro para abrir tu cuenta."}
         </p>
       </section>
       <form onSubmit={handleEnter} noValidate aria-busy={enter.isPending}>
@@ -173,23 +156,7 @@ export function BiometricPage() {
         <StatusMessage tone={isUnavailable ? "error" : "info"}>
           {CAMERA_MESSAGES[camera.state]}
         </StatusMessage>
-        {profile.hasAccount ? null : (
-          <TextField
-            id="biometric-password"
-            label="Crea tu contraseña de 6 dígitos"
-            type="password"
-            inputMode="numeric"
-            autoComplete="new-password"
-            value={password}
-            error={fieldError}
-            maxLength={PASSWORD_LENGTH}
-            placeholder="6 números"
-            onChange={(event) => {
-              setPassword(digitsOnly(event.target.value, PASSWORD_LENGTH));
-            }}
-          />
-        )}
-        {profile.hasAccount && fieldError ? (
+        {fieldError ? (
           <StatusMessage tone="error">{fieldError}</StatusMessage>
         ) : null}
         {enter.isError ? (
