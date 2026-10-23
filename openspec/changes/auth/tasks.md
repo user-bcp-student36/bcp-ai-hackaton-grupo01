@@ -14,6 +14,6 @@
 
 ## 3. Deliver login and wallet views with the reduced p0 journey
 <!-- issue: area=frontend size=M priority=p0 depends=scaffold:2,1,2,onboarding:3 files=web/src/features/auth/,web/src/lib/session.tsx,web/src/App.tsx,tests/e2e/onboarding.test.ts -->
-- [ ] 3.1 Add document-type/number/password login and memory-only session provider; verify token never enters browser persistent storage or URL.
-- [ ] 3.2 Render own wallet or non-active status, logout, expiry and cache clearing; verify prior-user/late-response data cannot appear after account switch.
+- [x] 3.1 Add document-type/number/password login and memory-only session provider; verify token never enters browser persistent storage or URL.
+- [x] 3.2 Render own wallet or non-active status, logout, expiry and cache clearing; verify prior-user/late-response data cannot appear after account switch.
 - [ ] 3.3 Test login/UI failures and complete registration-to-wallet journey for all KYC outcomes; exercise local backend persistence and verify no p1 screen is needed for the cutoff.

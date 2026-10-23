@@ -94,3 +94,37 @@ export function postJson<T>(
     baseUrl,
   );
 }
+
+export function getJsonAuthorized<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  token: string,
+  baseUrl: string = defaultBaseUrl(),
+): Promise<T> {
+  return send(
+    path,
+    {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+    schema,
+    baseUrl,
+  );
+}
+
+export async function deleteAuthorized(
+  path: string,
+  token: string,
+  baseUrl: string = defaultBaseUrl(),
+): Promise<void> {
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => undefined);
+    throw toApiError(response.status, body);
+  }
+}
